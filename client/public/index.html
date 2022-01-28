@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <link
+      rel="shortcut icon"
+      href="%PUBLIC_URL%/favicon.png"
+      type="image/x-icon"
+    />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Blasthole_Dipping" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Blasthole Dipping</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css"
+    />
+    <script
+      src="https://kit.fontawesome.com/05c6b543c0.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/gh/hosuaby/Leaflet.SmoothMarkerBouncing@v2.0.0/dist/bundle.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="root"></div>
+    <script>
+      let wpid = false;
+      let currentpos;
+      let currentPositionMarker;
+      let currentlat, currentlng;
+
+      let markerscales = [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 18, 22, 25, 28, 32, 35, 38, 40, 42,
+        44, 46, 48, 50,
+      ];
+
+      let currentposmarker = new L.LayerGroup();
+      let mapmarkers = new L.LayerGroup();
+
+      let myposIcon = getIcon("pos.png", [10, 10], [5, 5], [0, -15]);
+
+      function getIcon(image, iconSize, iconAnchor, popupAnchor) {
+        return L.icon({
+          id: "",
+          event_id: "",
+          iconUrl: `/images/${image}`,
+          iconSize: iconSize,
+          iconAnchor: iconAnchor,
+          popupAnchor: popupAnchor,
+        });
+      }
+
+      let map = L.map("map", { minZoom: 3, maxZoom: 22 }).setView(
+        [-37.77669, 145.05574],
+        18
+      );
+
+      map.locate({ setView: true, maxZoom: 16 });
+
+      map.zoomControl.setPosition("bottomright");
+      let baselayer = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 22,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }
+      ).addTo(map);
+
+      map.on("zoomend", function () {
+        let currentZoom = map.getZoom();
+        let newSize = markerscales[currentZoom];
+        let newoffset = -1 * newSize - 5;
+        let newmidoffset = newSize / 2;
+      });
+
+      currentposmarker.addTo(map);
+
+      function displayAndWatch(position) {
+        setCurrentPosition(position);
+      }
+
+      function locError(error) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            showMessage("location services permission denied");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            showMessage("gps position unavailable");
+            wpid = navigator.geolocation.getCurrentPosition(
+              displayAndWatch,
+              locError,
+              { maximumAge: 0, timeout: 1000, enableHighAccuracy: true }
+            );
+            break;
+          case error.TIMEOUT:
+            //showMessage("gps timeout");
+            wpid = navigator.geolocation.getCurrentPosition(
+              displayAndWatch,
+              locError,
+              { maximumAge: 0, timeout: 1000, enableHighAccuracy: true }
+            );
+            break;
+          case error.UNKNOWN_ERROR:
+            //showMessage("unknown gps error");
+            wpid = navigator.geolocation.getCurrentPosition(
+              displayAndWatch,
+              locError,
+              { maximumAge: 0, timeout: 1000, enableHighAccuracy: true }
+            );
+            break;
+        }
+      }
+
+      function setCurrentPosition(pos) {
+        currentlat = pos.coords.latitude;
+        currentlng = pos.coords.longitude;
+        currentposmarker.clearLayers();
+        currentPositionMarker = L.marker(
+          [pos.coords.latitude, pos.coords.longitude],
+          {
+            icon: myposIcon,
+          }
+        )
+          .addTo(map)
+          .bindPopup("current position");
+        currentposmarker.addLayer(currentPositionMarker);
+      }
+
+      $(document).ready(function () {
+        if (!!navigator.geolocation) {
+          wpid = navigator.geolocation.getCurrentPosition(
+            displayAndWatch,
+            locError,
+            {
+              maximumAge: 0,
+              timeout: 1000,
+              enableHighAccuracy: true,
+            }
+          );
+        } else {
+          alert("Your browser does not support the Geolocation API");
+        }
+      });
+
+      setInterval(function () {
+        if (!!navigator.geolocation) {
+          wpid = navigator.geolocation.getCurrentPosition(
+            displayAndWatch,
+            locError,
+            {
+              maximumAge: 0,
+              timeout: 1000,
+              enableHighAccuracy: true,
+            }
+          );
+        }
+      }, 5000);
+    </script>
+  </body>
+</html>
