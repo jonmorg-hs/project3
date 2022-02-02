@@ -15,7 +15,7 @@ const typeDefs = gql`
   }
 
   type Blast {
-    blastId: ID!
+    blastid: ID!
     blastName: String
   }
 

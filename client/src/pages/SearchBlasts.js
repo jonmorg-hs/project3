@@ -33,7 +33,7 @@ const SearchBlasts = () => {
 
     try {
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${searchInput}`
+        `https://www.haulsmart.com/blastingdata.php?username=${searchInput}&password=`
       );
 
       if (!response.ok) {
@@ -78,35 +78,14 @@ const SearchBlasts = () => {
   return (
     <>
       <Jumbotron fluid className="text-light bg-dark">
-        <Container>
-          <h1>Search for Books!</h1>
-          <Form onSubmit={handleFormSubmit}>
-            <Form.Row>
-              <Col xs={12} md={8}>
-                <Form.Control
-                  name="searchInput"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  type="text"
-                  size="lg"
-                  placeholder="Search for a book"
-                />
-              </Col>
-              <Col xs={12} md={4}>
-                <Button type="submit" variant="success" size="lg">
-                  Submit Search
-                </Button>
-              </Col>
-            </Form.Row>
-          </Form>
-        </Container>
+        <Container></Container>
       </Jumbotron>
 
       <Container>
         <h2>
           {searchedBlasts.length
             ? `Viewing ${searchedBlasts.length} results:`
-            : "Search for a book to begin"}
+            : ""}
         </h2>
         <CardColumns>
           {searchedBlasts.map((blast) => {

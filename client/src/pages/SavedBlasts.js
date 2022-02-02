@@ -44,7 +44,7 @@ const SavedBlasts = () => {
     <>
       <Jumbotron fluid className="text-light bg-dark">
         <Container>
-          <h1>Viewing saved books!</h1>
+          <h1>Active Blasts</h1>
         </Container>
       </Jumbotron>
       <Container>
@@ -74,7 +74,7 @@ const SavedBlasts = () => {
                     className="btn-block btn-danger"
                     onClick={() => handleDeleteBlast(blast.bookId)}
                   >
-                    Delete this Book!
+                    Delete this Blast!
                   </Button>
                 </Card.Body>
               </Card>

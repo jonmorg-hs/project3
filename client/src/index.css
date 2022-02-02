@@ -18,10 +18,31 @@ body {
 }
 
 #root {
+  background-color: white;
   position: absolute;
   width: 500px;
-  height: 500px;
+  height: 100%;
   top: 0px;
   left: 0px;
+  z-index: 1;
+}
+
+#headerimg {
+  width: 50px;
+}
+
+#heading {
+  margin-left: 5px;
+  font: bold 26px arial;
+  color: white;
+}
+
+#updatepanel {
+  background-color: white;
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  top: 0px;
+  right: 0px;
   z-index: 1;
 }

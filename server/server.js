@@ -23,6 +23,12 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 }
 
+app.get("/serviceWorker.js", (req, res) => {
+  res.sendFile(
+    path.resolve(__dirname, "public", "../client/build/serviceWorker.js")
+  );
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/build/index.html"));
 });
