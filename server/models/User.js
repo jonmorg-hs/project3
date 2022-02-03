@@ -1,33 +1,33 @@
 const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
-const blastSchema = require("./Blast");
 
-const userSchema = new Schema(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      match: [/.+@.+\..+/, "Must use a valid email address"],
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    savedBlasts: [blastSchema],
+const userSchema = new Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
   },
-  {
-    toJSON: {
-      virtuals: true,
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    match: [/.+@.+\..+/, "Must match an email address!"],
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 5,
+  },
+  thoughts: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Thought",
     },
-  }
-);
+  ],
+});
 
+// set up pre-save middleware to create password
 userSchema.pre("save", async function (next) {
   if (this.isNew || this.isModified("password")) {
     const saltRounds = 10;
@@ -37,13 +37,10 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// compare the incoming password with the hashed password
 userSchema.methods.isCorrectPassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
-
-userSchema.virtual("bookCount").get(function () {
-  return this.savedBlasts.length;
-});
 
 const User = model("User", userSchema);
 

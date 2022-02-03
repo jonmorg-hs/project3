@@ -38,28 +38,6 @@ const resolvers = {
 
       return { token, user };
     },
-    saveBlast: async (parent, { newBook }, context) => {
-      if (context.user) {
-        const updatedUser = await User.findByIdAndUpdate(
-          { _id: context.user._id },
-          { $push: { savedBlasts: newBlast } },
-          { new: true }
-        );
-        return updatedUser;
-      }
-      throw new AuthenticationError("You need to be logged in!");
-    },
-    removeBlast: async (parent, { blastId }, context) => {
-      if (context.user) {
-        const updatedUser = await User.findByIdAndUpdate(
-          { _id: context.user._id },
-          { $pull: { savedBlasts: { blastId } } },
-          { new: true }
-        );
-        return updatedUser;
-      }
-      throw new AuthenticationError("You need to be logged in!");
-    },
   },
 };
 

@@ -12,11 +12,7 @@ const AppNavbar = () => {
 
   return (
     <>
-      <Navbar bg="dark" variant="dark" expand="lg">
-        <div>
-          <img id="headerimg" src="logo192.png" />
-          <label id="heading">HAULSMART</label>
-        </div>
+      <Navbar expand="lg">
         <Container fluid>
           <Navbar.Toggle aria-controls="navbar" />
           <Navbar.Collapse id="navbar">
