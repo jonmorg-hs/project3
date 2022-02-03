@@ -20,39 +20,6 @@ export const ADD_USER = gql`
         _id
         username
         email
-        blastCount
-        savedBlasts {
-          blastId
-          blastName
-        }
-      }
-    }
-  }
-`;
-
-export const SAVE_BLAST = gql`
-  mutation saveBlast($newBlast: InputBlast!) {
-    saveBlast(newBlast: $newBlast) {
-      _id
-      username
-      email
-      savedBlasts {
-        blastId
-        blastName
-      }
-    }
-  }
-`;
-
-export const REMOVE_BLAST = gql`
-  mutation removeBlast($blastId: ID!) {
-    removeBlast(blastId: $blastId) {
-      _id
-      username
-      email
-      savedBlasts {
-        blastId
-        blastName
       }
     }
   }
