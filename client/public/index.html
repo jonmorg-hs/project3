@@ -187,7 +187,9 @@
 
       function getPolygons() {
         console.log("getPatterns");
-        var store = getObjectStore("polygons", "readwrite");
+        var store = window.db
+          .transaction("polygons", "readwrite")
+          .objectStore("polygons");
         var req;
         try {
           req = store.getAll();
@@ -198,6 +200,17 @@
           console.log("Reading DB successful");
           console.log(req.result[0]);
           geojson = req.result[0];
+          var bounds = L.latLngBounds();
+          for (var j = 0; j < geojson.features.length; j++) {
+            if (geojson.features[j].geometry.type == "Polygon") {
+              var coords = geojson.features[j].geometry.coordinates[0];
+              for (var i = 0; i < coords.length; i++) {
+                bounds.extend(L.latLng(coords[i][1], coords[i][0]));
+              }
+            }
+          }
+          map.fitBounds(bounds);
+          map.panTo(bounds.getCenter());
           L.geoJson(geojson, {
             style: areaStyle,
             onEachFeature: onEachFeature,
@@ -353,7 +366,7 @@
         req.onsuccess = function (evt) {
           window.db = this.result;
           console.log("openDb DONE");
-          //getPolygons();
+          getPolygons();
         };
         req.onerror = function (evt) {
           console.error("openDb:", evt.target.errorCode);
@@ -414,7 +427,7 @@
           lng: lng,
         };
 
-        var store = getObjectStore(DB_STORE_NAME, "readwrite");
+        var store = getObjectStore(window.DB_STORE_NAME, "readwrite");
         var req;
         try {
           req = store.add(obj);
@@ -437,7 +450,7 @@
 
       function getPatterns() {
         console.log("getPatterns");
-        var store = getObjectStore(DB_STORE_NAME, "readwrite");
+        var store = getObjectStore(window.DB_STORE_NAME, "readwrite");
         var req;
         try {
           req = store.getAll();
@@ -460,7 +473,9 @@
       function getPattern() {
         console.log("getPattern");
         holemarkers.clearLayers();
-        var store = getObjectStore(DB_STORE_NAME, "readwrite");
+        var store = window.db
+          .transaction(window.DB_STORE_NAME, "readwrite")
+          .objectStore(window.DB_STORE_NAME);
         var req;
         try {
           req = store.getAll();
@@ -634,6 +649,22 @@
         } else {
           console.log("offline");
         }
+      }
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/serviceworker.js").then(
+            function (registration) {
+              console.log(
+                "ServiceWorker registration successful with scope: ",
+                registration.scope
+              );
+            },
+            function (err) {
+              console.log("ServiceWorker registration failed: ", err);
+            }
+          );
+        });
       }
     </script>
   </body>
