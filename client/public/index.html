@@ -44,10 +44,7 @@
   </head>
   <body>
     <div id="map"></div>
-    <div id="root"></div>
-    <div id="updatepanel">
-      <input type="button" onclick="getBlastPolygons()" value="Update DB" />
-    </div>
+    <div id="root" class="splash"></div>
     <script>
       let wpid = false;
       let currentpos;
@@ -251,30 +248,6 @@
         getPattern();
       }
 
-      function getBlastPolygons() {
-        $.getJSON(
-          "https://www.haulsmart.com/apis/blastpolygons.php",
-          function (geojson) {
-            console.log(geojson);
-            var store = getObjectStore("polygons", "readwrite");
-            var req = store.clear();
-            var req;
-            try {
-              req = store.add(geojson);
-            } catch (e) {
-              throw e;
-            }
-            req.onsuccess = function (evt) {
-              alert("Insertion in DB successful");
-            };
-            req.onerror = function () {
-              alert("Insertion in DB Failed ", this.error);
-            };
-          }
-        );
-        getholedata();
-      }
-
       function getholedata() {
         $.getJSON(
           "https://www.haulsmart.com/apis/holedata.php?id=so_gw_295_08",
@@ -367,21 +340,20 @@
         }
       }, 5000);
 
-      const DB_NAME = "blasts";
-      const DB_VERSION = 1;
-      const DB_STORE_NAME = "patterns";
-
-      var db;
+      window.db;
+      window.DB_NAME = "blasts";
+      window.DB_VERSION = 1;
+      window.DB_STORE_NAME = "patterns";
 
       openDb();
 
       function openDb() {
         console.log("openDb ...");
-        var req = indexedDB.open(DB_NAME, DB_VERSION);
+        var req = indexedDB.open(window.DB_NAME, window.DB_VERSION);
         req.onsuccess = function (evt) {
-          db = this.result;
+          window.db = this.result;
           console.log("openDb DONE");
-          getPolygons();
+          //getPolygons();
         };
         req.onerror = function (evt) {
           console.error("openDb:", evt.target.errorCode);
@@ -397,8 +369,11 @@
             }
           );
           var store = evt.currentTarget.result.createObjectStore(
-            DB_STORE_NAME,
-            { keyPath: "id", autoIncrement: true }
+            window.DB_STORE_NAME,
+            {
+              keyPath: "id",
+              autoIncrement: true,
+            }
           );
           store.createIndex("id", "id", { unique: true });
           store.createIndex("blast", "blast", { unique: false });
@@ -410,23 +385,6 @@
           store.createIndex("dipped", "dipped", { unique: false });
           store.createIndex("lat", "lat", { unique: false });
           store.createIndex("lng", "lng", { unique: false });
-        };
-      }
-
-      function getObjectStore(store_name, mode) {
-        var tx = db.transaction(store_name, mode);
-        return tx.objectStore(store_name);
-      }
-
-      function clearObjectStore() {
-        var store = getObjectStore(DB_STORE_NAME, "readwrite");
-        var req = store.clear();
-        req.onsuccess = function (evt) {
-          console.log("Store cleared");
-        };
-        req.onerror = function (evt) {
-          console.error("clearObjectStore:", evt.target.errorCode);
-          console.log(this.error);
         };
       }
 
@@ -475,6 +433,8 @@
         };
       }
 
+      let patterndata;
+
       function getPatterns() {
         console.log("getPatterns");
         var store = getObjectStore(DB_STORE_NAME, "readwrite");
@@ -514,6 +474,7 @@
         req.onsuccess = function (evt) {
           console.log("Reading DB successful");
           let holedata = req.result;
+          patterndata = req.result;
           for (var i = 0; i < holedata.length; i++) {
             var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
             var html =
@@ -600,7 +561,7 @@
             "<input id='dippedval' onchange=\"setHole()\" value='" +
             req.result.dipped * 1 +
             "'>";
-          $("#root").html(html);
+          //$("#root").html(html);
         };
         req.onerror = function () {
           console.error("read db error", this.error);
@@ -628,10 +589,51 @@
         req.onsuccess = function (evt) {
           console.log("Writing to DB successful");
           getPattern();
+          uploadHole(holeObj);
         };
         req.onerror = function () {
           console.error("read db error", this.error);
         };
+      }
+
+      function uploadHole(holeObj) {
+        console.log(JSON.stringify(holeObj));
+        if (navigator.onLine === true) {
+          console.log("online");
+          $.ajax({
+            url: "https://www.haulsmart.com/apis/setHole.php",
+            type: "POST",
+            data: { json: JSON.stringify(holeObj) },
+            timeout: 10000,
+            error: function () {},
+            dataType: "text",
+            success: function (text) {
+              alert(text);
+            },
+          });
+        } else {
+          console.log("offline");
+        }
+      }
+
+      function uploadPattern() {
+        if (navigator.onLine === true) {
+          console.log("online");
+          $.ajax({
+            url: "https://www.haulsmart.com/apis/setPattern.php",
+            type: "POST",
+            crossDomain: true,
+            data: { json: JSON.stringify(patterdata) },
+            timeout: 10000,
+            error: function () {},
+            dataType: "text",
+            success: function (text) {
+              alert(text);
+            },
+          });
+        } else {
+          console.log("offline");
+        }
       }
     </script>
   </body>

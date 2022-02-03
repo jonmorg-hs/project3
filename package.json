@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "apollo-client": "^2.6.10",
+    "cors": "^2.8.5",
     "graphql": "^15.5.2"
   }
 }

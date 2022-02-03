@@ -14,8 +14,12 @@ class AuthService {
     try {
       const decoded = decode(token);
       if (decoded.exp < Date.now() / 1000) {
+        document.getElementById("root").className = "splash";
         return true;
-      } else return false;
+      } else {
+        document.getElementById("root").className = "menu";
+        return false;
+      }
     } catch (err) {
       return false;
     }
@@ -26,11 +30,13 @@ class AuthService {
   }
 
   login(idToken) {
+    document.getElementById("root").className = "menu";
     localStorage.setItem("id_token", idToken);
     window.location.assign("/");
   }
 
   logout() {
+    document.getElementById("root").className = "splash";
     localStorage.removeItem("id_token");
     window.location.assign("/");
   }

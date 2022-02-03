@@ -7,4 +7,8 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/blastholes", {
   useFindAndModify: false,
 });
 
+console.log(mongoose.connection.readyState);
+
+console.log("MongoDB connected!!");
+
 module.exports = mongoose.connection;

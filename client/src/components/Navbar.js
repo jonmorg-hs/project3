@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Navbar, Nav, Container, Modal, Tab, Button } from "react-bootstrap";
 import SignUpForm from "./SignupForm";
 import LoginForm from "./LoginForm";
-
+import syncData from "../utils/syncdata";
+import uploadData from "../utils/uploaddata";
 import Auth from "../utils/auth";
 
 const AppNavbar = () => {
@@ -17,17 +18,19 @@ const AppNavbar = () => {
           <Navbar.Toggle aria-controls="navbar" />
           <Navbar.Collapse id="navbar">
             <Nav className="ml-auto">
-              <Nav.Link as={Link} to="/"></Nav.Link>
               {/* if user is logged in show saved books and logout */}
               {Auth.loggedIn() ? (
                 <>
-                  <Nav.Link as={Link} to="/saved">
-                    See Your Blast Patterns
+                  <Nav.Link onClick={() => syncData()}>
+                    Sync Data to HaulSmart Main
+                  </Nav.Link>
+                  <Nav.Link onClick={() => uploadData()}>
+                    Update Cloud Data
                   </Nav.Link>
                   <Nav.Link onClick={Auth.logout}>Logout</Nav.Link>
                 </>
               ) : (
-                <Nav.Link onClick={() => setShowModal(true)}>
+                <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
                   Login/Sign Up
                 </Nav.Link>
               )}
