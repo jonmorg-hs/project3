@@ -200,21 +200,13 @@
           console.log("Reading DB successful");
           console.log(req.result[0]);
           geojson = req.result[0];
-          var bounds = L.latLngBounds();
-          for (var j = 0; j < geojson.features.length; j++) {
-            if (geojson.features[j].geometry.type == "Polygon") {
-              var coords = geojson.features[j].geometry.coordinates[0];
-              for (var i = 0; i < coords.length; i++) {
-                bounds.extend(L.latLng(coords[i][1], coords[i][0]));
-              }
-            }
+          if (geojson === null) {
+          } else {
+            L.geoJson(geojson, {
+              style: areaStyle,
+              onEachFeature: onEachFeature,
+            }).addTo(map);
           }
-          map.fitBounds(bounds);
-          map.panTo(bounds.getCenter());
-          L.geoJson(geojson, {
-            style: areaStyle,
-            onEachFeature: onEachFeature,
-          }).addTo(map);
         };
         req.onerror = function () {
           console.error("read db error", this.error);
