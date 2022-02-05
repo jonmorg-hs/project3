@@ -18,7 +18,7 @@ body {
 }
 
 .splash {
-  background-color: rgba(20, 114, 177, 0.856);
+  background-color: rgba(20, 114, 177, 1);
   background-image: url("/images/splash.png");
   background-attachment: fixed;
   background-repeat: no-repeat;
