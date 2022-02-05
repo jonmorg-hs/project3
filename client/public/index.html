@@ -68,6 +68,30 @@
         style="cursor: pointer"
       />
     </div>
+    <div id="uploadform" class="uploads">
+      <label>Design Holes :</label>
+      <form
+        id="uploadForm"
+        name="uploadForm"
+        action="#"
+        enctype="multipart/form-data"
+      >
+        <input
+          id="csv"
+          name="csv"
+          type="file"
+          style="margin-left: 0px; font: normal 16px arial"
+        />
+        <input
+          id="CSVUpload"
+          type="submit"
+          class="btn btn-default"
+          name="Submit"
+          value="Upload"
+        />
+      </form>
+      <!--<img src='images/downloadcsv.png' style='cursor:pointer;width:20px;height:20px' title='Download CSV template' /><a class="fileDownloadPromise" href="templates/pattern_template.csv?n=1">Download Drill Pattern Template</a>-->
+    </div>
     <script>
       window.login = false;
       window.email;
@@ -249,7 +273,7 @@
       });
 
       function showMessage(message) {
-        $("#message").html(message).show();
+        $("#message").html(message).css({ display: "table-cell" }).show();
         setTimeout(function () {
           $("#message").html("").hide();
         }, 3000);
@@ -1072,6 +1096,38 @@
       function centerSite() {
         map.setView(new L.LatLng(currentlat, currentlng), 18);
       }
+
+      $("#uploadForm").submit(function (event) {
+        var check = confirm("Do you want to upload pattern holes");
+        if (check) {
+          event.preventDefault();
+          event.stopPropagation();
+          var file = document.getElementById("csv").files[0];
+          var filename = document.getElementById("csv").value;
+          var path = filename.slice(0, 12);
+          if (filename == path + $("#patternselect").val() + ".csv") {
+            var ext = filename.substr(filename.lastIndexOf(".") + 1);
+            if (ext == "csv") {
+              var reader = new FileReader();
+              reader.readAsText(file);
+              reader.onload = function (e) {
+                var header =
+                  "Pattern,Hole,Lng,Lat,Collar,Hole,Toe,Dia,Brg,Angle";
+                var csvString = header + "\n" + e.target.result;
+                var data = JSON.stringify($.csv.toObjects(csvString));
+              };
+            } else {
+              alert("Please ensure you upload a csv file");
+            }
+          } else {
+            alert(
+              "Please check the filename of csv as it doesnt match polygon name"
+            );
+          }
+        } else {
+          $("#uploadpanel").hide();
+        }
+      });
     </script>
   </body>
 </html>

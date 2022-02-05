@@ -7,7 +7,9 @@ import syncData from "../utils/syncdata";
 import workSheet from "../utils/worksheet";
 import uploadData from "../utils/uploaddata";
 import installPWA from "../utils/installpwa";
+import uploadCSV from "../utils/uploadcsv";
 import Auth from "../utils/auth";
+import { isMobile } from "react-device-detect";
 
 const AppNavbar = () => {
   // set modal display state
@@ -21,7 +23,7 @@ const AppNavbar = () => {
       // Store the event so it can be used later.
       window.deferredPrompt = event;
       // Remove the 'hidden' class from the install anchor tag.
-      butInstall.style.display = "block";
+      butInstall.style.display = "table-cell";
     });
 
     window.addEventListener("appinstalled", (event) => {
@@ -30,6 +32,13 @@ const AppNavbar = () => {
       window.deferredPrompt = null;
       butInstall.style.display = "none";
     });
+
+    //const uploadcsv = document.getElementById("uploadcsv");
+    //if (isMobile) {
+    //  uploadcsv.style.display = "none";
+    //} else {
+    //  uploadcsv.style.display = "block";
+    // }
   }, []);
 
   return (
@@ -48,11 +57,13 @@ const AppNavbar = () => {
                   <Nav.Link onClick={() => uploadData()}>
                     <div className="option">Sync Data to Cloud</div>
                   </Nav.Link>
-                  <Nav.Link onClick={() => alert("test")}>
-                    <div className="option">Active Patterns</div>
-                  </Nav.Link>
                   <Nav.Link onClick={() => workSheet()}>
                     <div className="option">Worksheet</div>
+                  </Nav.Link>
+                  <Nav.Link onClick={() => uploadCSV()}>
+                    <div id="uploadcsv" className="option">
+                      Upload CSV
+                    </div>
                   </Nav.Link>
                   <Nav.Link onClick={Auth.logout}>
                     <div className="option">Logout</div>
@@ -62,7 +73,7 @@ const AppNavbar = () => {
                 <>
                   <Nav.Link onClick={() => installPWA()}>
                     <div id="buttonInstall" className="installoption">
-                      Install
+                      Install APP
                     </div>
                   </Nav.Link>
                   <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
