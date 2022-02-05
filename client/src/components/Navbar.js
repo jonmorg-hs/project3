@@ -4,6 +4,7 @@ import { Navbar, Nav, Container, Modal, Tab, Button } from "react-bootstrap";
 import SignUpForm from "./SignupForm";
 import LoginForm from "./LoginForm";
 import syncData from "../utils/syncdata";
+import workSheet from "../utils/worksheet";
 import uploadData from "../utils/uploaddata";
 import Auth from "../utils/auth";
 
@@ -22,12 +23,20 @@ const AppNavbar = () => {
               {Auth.loggedIn() ? (
                 <>
                   <Nav.Link onClick={() => syncData()}>
-                    Sync Data to HaulSmart Main
+                    <div className="option">Sync Data to HaulSmart</div>
                   </Nav.Link>
                   <Nav.Link onClick={() => uploadData()}>
-                    Update Cloud Data
+                    <div className="option">Sync Data to Cloud</div>
                   </Nav.Link>
-                  <Nav.Link onClick={Auth.logout}>Logout</Nav.Link>
+                  <Nav.Link onClick={() => alert("test")}>
+                    <div className="option">Active Patterns</div>
+                  </Nav.Link>
+                  <Nav.Link onClick={() => workSheet()}>
+                    <div className="option">Worksheet</div>
+                  </Nav.Link>
+                  <Nav.Link onClick={Auth.logout}>
+                    <div className="option">Logout</div>
+                  </Nav.Link>
                 </>
               ) : (
                 <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>

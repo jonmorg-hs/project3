@@ -1,10 +1,10 @@
 // see SignupForm.js for comments
 import React, { useState } from "react";
 import { Form, Button, Alert } from "react-bootstrap";
-
 import { useMutation } from "@apollo/client";
 import { LOGIN_USER } from "../utils/mutations";
 import Auth from "../utils/auth";
+import $ from "jquery";
 
 const LoginForm = () => {
   const [userFormData, setUserFormData] = useState({ email: "", password: "" });
@@ -20,7 +20,6 @@ const LoginForm = () => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    // check if form has everything (as per react-bootstrap docs)
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
       event.preventDefault();
@@ -33,6 +32,26 @@ const LoginForm = () => {
       });
 
       Auth.login(data.login.token);
+
+      $.ajax({
+        url:
+          "https://www.haulsmart.com/apis/haulsmartlogin.php?email=" +
+          userFormData.email +
+          "&password=" +
+          userFormData.password,
+        dataType: "text",
+        type: "GET",
+        async: false,
+        success: function (text) {
+          localStorage.setItem("bh_database", text);
+          if (text == "true") {
+            window.email = userFormData.email;
+            window.password = userFormData.password;
+            localStorage.setItem("email", userFormData.email);
+            localStorage.setItem("password", userFormData.password);
+          }
+        },
+      });
     } catch (err) {
       console.error(err);
       setShowAlert(true);

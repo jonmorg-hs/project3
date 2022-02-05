@@ -1,4 +1,4 @@
-let CACHE_NAME = "dippingmap_cache1";
+let CACHE_NAME = "dippingmap_cache2";
 
 let urlsToCache = [
   "/",
