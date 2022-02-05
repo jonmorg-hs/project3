@@ -6,6 +6,7 @@ import LoginForm from "./LoginForm";
 import syncData from "../utils/syncdata";
 import workSheet from "../utils/worksheet";
 import uploadData from "../utils/uploaddata";
+import installApp from "../utils/installpwa";
 import Auth from "../utils/auth";
 
 const AppNavbar = () => {
@@ -39,9 +40,14 @@ const AppNavbar = () => {
                   </Nav.Link>
                 </>
               ) : (
-                <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
-                  Login/Sign Up
-                </Nav.Link>
+                <>
+                  <Nav.Link id="buttonInstall" onClick={() => installApp()}>
+                    <div className="option">Install</div>
+                  </Nav.Link>
+                  <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
+                    <div className="option">Login/SignUp</div>
+                  </Nav.Link>
+                </>
               )}
             </Nav>
           </Navbar.Collapse>
