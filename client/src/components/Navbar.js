@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Navbar, Nav, Container, Modal, Tab, Button } from "react-bootstrap";
 import SignUpForm from "./SignupForm";
@@ -6,12 +6,31 @@ import LoginForm from "./LoginForm";
 import syncData from "../utils/syncdata";
 import workSheet from "../utils/worksheet";
 import uploadData from "../utils/uploaddata";
-import installApp from "../utils/installpwa";
+import installPWA from "../utils/installpwa";
 import Auth from "../utils/auth";
 
 const AppNavbar = () => {
   // set modal display state
   const [showModal, setShowModal] = useState(false);
+
+  React.useEffect(() => {
+    const butInstall = document.getElementById("buttonInstall");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      console.log("👍", "beforeinstallprompt", event);
+      // Store the event so it can be used later.
+      window.deferredPrompt = event;
+      // Remove the 'hidden' class from the install anchor tag.
+      butInstall.style.display = "block";
+    });
+
+    window.addEventListener("appinstalled", (event) => {
+      console.log("👍", "appinstalled", event);
+      // Clear the prompt
+      window.deferredPrompt = null;
+      butInstall.style.display = "none";
+    });
+  }, []);
 
   return (
     <>
@@ -41,8 +60,10 @@ const AppNavbar = () => {
                 </>
               ) : (
                 <>
-                  <Nav.Link id="buttonInstall" onClick={() => installApp()}>
-                    <div className="option">Install</div>
+                  <Nav.Link onClick={() => installPWA()}>
+                    <div id="buttonInstall" className="installoption">
+                      Install
+                    </div>
                   </Nav.Link>
                   <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
                     <div className="option">Login/SignUp</div>
