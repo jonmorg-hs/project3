@@ -1,7 +1,7 @@
 import $ from "jquery";
 
 const uploadCSV = () => {
-  $("uploadform").show();
+  $("#uploadform").show();
 };
 
 export default uploadCSV;

@@ -4,9 +4,9 @@ const syncData = () => {
   alert("Syncing with HaulSmart");
   var url =
     "https://www.haulsmart.com/apis/blastpolygons.php?email=" +
-    window.email +
+    localStorage.getItem("email") +
     "&password=" +
-    window.password;
+    localStorage.getItem("password");
   console.log(url);
   $.ajax({
     url: url,

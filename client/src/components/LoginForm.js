@@ -39,12 +39,14 @@ const LoginForm = () => {
           userFormData.email +
           "&password=" +
           userFormData.password,
-        dataType: "text",
+        dataType: "json",
         type: "GET",
         async: false,
-        success: function (text) {
-          localStorage.setItem("bh_database", text);
-          if (text == "true") {
+        success: function (json) {
+          localStorage.setItem("bh_database", json.login);
+          if (json.login === "true") {
+            localStorage.setItem("sitelat", json.sitelat);
+            localStorage.setItem("sitelng", json.sitelng);
             window.email = userFormData.email;
             window.password = userFormData.password;
             localStorage.setItem("email", userFormData.email);

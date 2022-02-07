@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Navbar, Nav, Container, Modal, Tab, Button } from "react-bootstrap";
+import React, { useState } from "react";
+import { Navbar, Nav, Container, Modal, Tab } from "react-bootstrap";
 import SignUpForm from "./SignupForm";
 import LoginForm from "./LoginForm";
 import syncData from "../utils/syncdata";
 import workSheet from "../utils/worksheet";
-import uploadData from "../utils/uploaddata";
 import installPWA from "../utils/installpwa";
 import uploadCSV from "../utils/uploadcsv";
 import Auth from "../utils/auth";
-import { isMobile } from "react-device-detect";
 
 const AppNavbar = () => {
   // set modal display state
@@ -23,7 +20,9 @@ const AppNavbar = () => {
       // Store the event so it can be used later.
       window.deferredPrompt = event;
       // Remove the 'hidden' class from the install anchor tag.
-      butInstall.style.display = "table-cell";
+      if (butInstall !== null) {
+        butInstall.style.display = "table-cell";
+      }
     });
 
     window.addEventListener("appinstalled", (event) => {
@@ -52,10 +51,7 @@ const AppNavbar = () => {
               {Auth.loggedIn() ? (
                 <>
                   <Nav.Link onClick={() => syncData()}>
-                    <div className="option">Sync Data to HaulSmart</div>
-                  </Nav.Link>
-                  <Nav.Link onClick={() => uploadData()}>
-                    <div className="option">Sync Data to Cloud</div>
+                    <div className="option">Sync Data</div>
                   </Nav.Link>
                   <Nav.Link onClick={() => workSheet()}>
                     <div className="option">Worksheet</div>

@@ -6,12 +6,18 @@
 
 - [Description](#description)
 - [Screenshot](#screenshot)
+- [Installation](#installation)
 - [Link](*link)
 - [License](#license)
 
 # Description
 
 # Screenshot
+
+# Installation
+
+npm install jquery --save
+npm install react-device-detect --save
 
 # Link
 

@@ -1,8 +1,8 @@
-let CACHE_NAME = "dippingmap_cache2";
+let CACHE_NAME = "dippingmap_cache16";
 
 let urlsToCache = [
   "/",
-  "/manifest.js",
+  "/manifest.json",
   "/index.html",
   "/images/bh_blue.png",
   "/images/bh_green.png",
@@ -18,6 +18,7 @@ let urlsToCache = [
   "/logo192.png",
   "/logo512.png",
 
+  "/jquery-csv.js",
   "https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap",
   "https://kit.fontawesome.com/05c6b543c0.js",
   "https://code.jquery.com/jquery-1.10.2.js",
@@ -71,7 +72,7 @@ self.addEventListener("fetch", function (event) {
         if (response) {
           return response;
         }
-        requestBackend(event);
+        //requestBackend(event);
       })
     );
   }

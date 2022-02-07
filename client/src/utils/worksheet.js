@@ -8,10 +8,8 @@ const workSheet = () => {
   try {
     req = store.getAll();
   } catch (e) {
-    if (e.name == "DataCloneError")
-      console.log(
-        "This engine doesn't know how to clone a Blob, " + "use Firefox"
-      );
+    if (e.name === "DataCloneError")
+      console.log("This engine doesn't know how to clone a Blob, use Firefox");
     throw e;
   }
   req.onsuccess = function (evt) {
@@ -28,17 +26,16 @@ const workSheet = () => {
       var depth = (window.holedata[i].collar - window.holedata[i].toe).toFixed(
         1
       );
+      var bgcolor = "white";
       var difference = window.holedata[i].dipped - depth;
-      if (window.holedata[i].dipped * 1 === 0) {
-        var bgcolor = "white";
-      } else {
+      if (window.holedata[i].dipped * 1 !== 0) {
         if (difference > -0.3 && difference < 0.3) {
-          var bgcolor = "green";
+          bgcolor = "green";
         } else {
           if (difference > -0.5 && difference < 0.5) {
-            var bgcolor = "orange";
+            bgcolor = "orange";
           } else {
-            var bgcolor = "red";
+            bgcolor = "red";
           }
         }
       }
@@ -84,9 +81,9 @@ const workSheet = () => {
       try {
         req = store.get(hid);
       } catch (e) {
-        if (e.name == "DataCloneError")
+        if (e.name === "DataCloneError")
           console.log(
-            "This engine doesn't know how to clone a Blob, " + "use Firefox"
+            "This engine doesn't know how to clone a Blob, use Firefox"
           );
         throw e;
       }
@@ -95,24 +92,19 @@ const workSheet = () => {
         console.log(req.result);
         console.log(req.result.hole);
         window.holeObj = req.result;
-        var depth = req.result.collar * 1 - req.result.toe * 1;
         console.log(window.holeObj.dipped);
         $("#dippedval").val(window.holeObj.dipped);
 
         var dipped = $("#did" + hid).val() * 1;
         console.log(dipped);
         window.holeObj.dipped = dipped;
-        var depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
-        depth = depth.toFixed(1);
-        var difference = dipped - depth;
         console.log(window.holeObj);
-
         try {
           req = store.put(window.holeObj);
         } catch (e) {
-          if (e.name == "DataCloneError")
+          if (e.name === "DataCloneError")
             console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
+              "This engine doesn't know how to clone a Blob, use Firefox"
             );
           throw e;
         }

@@ -10,11 +10,3 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById("root")
 );
-
-//serviceWorker.register();
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("./serviceWorker.js")
-    .then((register) => console.log(register));
-}

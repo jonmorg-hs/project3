@@ -41,6 +41,7 @@
     ></script>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="jquery-csv.js"></script>
   </head>
   <body>
     <div id="map"></div>
@@ -69,7 +70,15 @@
       />
     </div>
     <div id="uploadform" class="uploads">
-      <label>Design Holes :</label>
+      <label>UPLOAD DRILL PATTERN :</label><br /><br />
+      <label>Ensure CSV columns:</label><br />
+      <label>Hole_No,Lng,Lat,Collar,Toe,Dia,Brg,Angle</label><br /><br />
+      <input
+        id="pattern"
+        placeholder="Input Pattern Name"
+        style="width: 200px; font: normal 18px Arial"
+        value=""
+      /><br /><br />
       <form
         id="uploadForm"
         name="uploadForm"
@@ -82,12 +91,20 @@
           type="file"
           style="margin-left: 0px; font: normal 16px arial"
         />
+        <br />
+        <br />
         <input
           id="CSVUpload"
           type="submit"
           class="btn btn-default"
           name="Submit"
           value="Upload"
+        />
+        <input
+          type="button"
+          value="Cancel"
+          class="btn"
+          onclick="$('#uploadform').hide()"
         />
       </form>
       <!--<img src='images/downloadcsv.png' style='cursor:pointer;width:20px;height:20px' title='Download CSV template' /><a class="fileDownloadPromise" href="templates/pattern_template.csv?n=1">Download Drill Pattern Template</a>-->
@@ -97,6 +114,15 @@
       window.email;
       window.password;
       window.holedata;
+      if (
+        localStorage.getItem("sitelat") == null ||
+        localStorage.getItem("sitelat") == undefined
+      ) {
+        let sitelat = 0;
+        let sitelng = 0;
+      }
+      let sitelat = localStorage.getItem("sitelat") * 1;
+      let sitelng = localStorage.getItem("sitelng") * 1;
 
       let wpid = false;
       let currentpos;
@@ -133,7 +159,7 @@
 
       function initMap() {
         map = L.map("map", { minZoom: 3, maxZoom: 23 }).setView(
-          [-27.9245562287, 122.36137027844],
+          [sitelat, sitelng],
           18
         );
 
@@ -245,7 +271,7 @@
           [pos.coords.latitude, pos.coords.longitude],
           {
             icon: L.icon({
-              iconUrl: "%PUBLIC_URL%/images/pos.png?n=1",
+              iconUrl: "%PUBLIC_URL%/images/pos.png",
               iconSize: [2, 2],
               iconAnchor: [1, 1],
             }),
@@ -268,7 +294,7 @@
             }
           );
         } else {
-          alert("Your browser does not support the Geolocation API");
+          showMessage("Your browser does not support the Geolocation API");
         }
       });
 
@@ -279,7 +305,7 @@
         }, 3000);
       }
 
-      var geojson = [];
+      var geojson;
 
       function getPolygons() {
         if ((window.login = true)) {
@@ -296,8 +322,9 @@
                 dataType: "json",
                 type: "GET",
                 async: false,
-                success: function (geojson) {
-                  console.log(geojson);
+                success: function (data) {
+                  geojson = data;
+
                   L.geoJson(geojson, {
                     style: areaStyle,
                     onEachFeature: onEachFeature,
@@ -353,7 +380,6 @@
               showMessage("OFFLINE: Cannot sync with HaulSmart");
             }
           } else {
-            console.log("getPatterns");
             var store = window.db
               .transaction("polygons", "readwrite")
               .objectStore("polygons");
@@ -364,17 +390,14 @@
               console.log(e);
             }
             req.onsuccess = function (evt) {
-              console.log("Reading DB successful");
-              console.log(req.result[0]);
               delete req.result[0]["id"];
               geojson = req.result;
-              console.log(req.result[0]);
+
               L.geoJson(req.result[0], {
                 style: areaStyle,
                 onEachFeature: onEachFeature,
               }).addTo(map);
               for (var j = 0; j < geojson.features.length; j++) {
-                console.log(geojson.features[j].properties.lng);
                 var marker = L.marker(
                   [
                     geojson.features[j].properties.lat,
@@ -442,14 +465,13 @@
         map.fitBounds(bounds);
         map.panTo(bounds.getCenter());
         //getholedata();
-        getPattern();
+        //getPattern();
       }
 
       function getholedata() {
         $.getJSON(
           "https://www.haulsmart.com/apis/holedata.php?id=so_gw_295_08",
           function (geojson) {
-            console.log(geojson);
             holemarkers.clearLayers();
             for (var j = 0; j < geojson.features.length; j++) {
               var coords = geojson.features[j].geometry.coordinates;
@@ -478,7 +500,6 @@
                 .bindPopup(html);
               holemarkers.addLayer(marker);
               addHole(
-                j,
                 geojson.features[j].properties.Blast,
                 geojson.features[j].properties.Hole,
                 geojson.features[j].properties.HoleType,
@@ -495,7 +516,6 @@
       }
 
       function onHoleClick(id) {
-        console.log("getHole: " + id);
         getHole(id);
       }
 
@@ -529,20 +549,23 @@
       window.DB_STORE_NAME = "patterns";
 
       function openDb() {
-        console.log("openDb ...");
         var req = indexedDB.open(window.DB_NAME, window.DB_VERSION);
         req.onsuccess = function (evt) {
           window.db = this.result;
-          console.log("openDb DONE");
-          getPolygons();
-          getPattern();
+
+          //getPolygons();
+          if (
+            localStorage.getItem("pattern") !== null ||
+            localStorage.getItem("pattern") !== undefined
+          ) {
+            getPattern(localStorage.getItem("pattern"));
+          }
         };
         req.onerror = function (evt) {
           console.error("openDb:", evt.target.errorCode);
         };
 
         req.onupgradeneeded = function (evt) {
-          console.log("openDb.onupgradeneeded");
           var polygonstore = evt.currentTarget.result.createObjectStore(
             "polygons",
             {
@@ -571,7 +594,6 @@
       }
 
       function addHole(
-        id,
         blast,
         hole,
         holetype,
@@ -582,9 +604,7 @@
         lat,
         lng
       ) {
-        console.log("addHole arguments:", arguments);
         var obj = {
-          id: id,
           blast: blast,
           hole: hole,
           holetype: holetype,
@@ -604,134 +624,111 @@
         } catch (e) {
           if (e.name == "DataCloneError")
             console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
+              "This engine doesn't know how to clone a Blob, use Firefox"
             );
           throw e;
         }
-        req.onsuccess = function (evt) {
-          console.log("Insertion in DB successful");
-        };
+        req.onsuccess = function (evt) {};
         req.onerror = function () {
           console.error("addHole error", this.error);
         };
       }
 
-      let patterndata;
-
-      function getPatterns() {
-        console.log("getPatterns");
-        var store = window.db
-          .transaction(window.DB_STORE_NAME, "readwrite")
-          .objectStore(window.DB_STORE_NAME);
-        var req;
-        try {
-          req = store.getAll();
-        } catch (e) {
-          if (e.name == "DataCloneError")
-            console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
-            );
-          throw e;
-        }
-        req.onsuccess = function (evt) {
-          console.log("Reading DB successful");
-          console.log(req.result);
-        };
-        req.onerror = function () {
-          console.error("read db error", this.error);
-        };
-      }
-
-      function getPattern() {
-        console.log("getPattern");
+      function getPattern(pattern) {
         holemarkers.clearLayers();
         var store = window.db
           .transaction(window.DB_STORE_NAME, "readwrite")
           .objectStore(window.DB_STORE_NAME);
+
         var req;
         try {
           req = store.getAll();
         } catch (e) {
           if (e.name == "DataCloneError")
             console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
+              "This engine doesn't know how to clone a Blob, use Firefox"
             );
           throw e;
         }
         req.onsuccess = function (evt) {
-          console.log("Reading DB successful");
           let holedata = req.result;
           patterndata = req.result;
           var bounds = L.latLngBounds();
+
           for (var i = 0; i < holedata.length; i++) {
-            var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
-            var difference = holedata[i].dipped - depth;
-            if (holedata[i].dipped * 1 === 0) {
-              var icon = L.icon({
-                iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
-                iconSize: [10, 10],
-                iconAnchor: [5, 5],
-              });
-            } else {
-              if (difference > -0.3 && difference < 0.3) {
+            if (holedata[i].blast == pattern) {
+              var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
+              var difference = holedata[i].dipped - depth;
+              if (holedata[i].dipped * 1 === 0) {
                 var icon = L.icon({
-                  iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
+                  iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
                   iconSize: [10, 10],
                   iconAnchor: [5, 5],
                 });
               } else {
-                if (difference > -0.5 && difference < 0.5) {
+                if (difference > -0.3 && difference < 0.3) {
                   var icon = L.icon({
-                    iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
+                    iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
                     iconSize: [10, 10],
                     iconAnchor: [5, 5],
                   });
                 } else {
-                  var icon = L.icon({
-                    iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
-                    iconSize: [10, 10],
-                    iconAnchor: [5, 5],
-                  });
+                  if (difference > -0.5 && difference < 0.5) {
+                    var icon = L.icon({
+                      iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
+                      iconSize: [10, 10],
+                      iconAnchor: [5, 5],
+                    });
+                  } else {
+                    var icon = L.icon({
+                      iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
+                      iconSize: [10, 10],
+                      iconAnchor: [5, 5],
+                    });
+                  }
                 }
               }
-            }
-            var html =
-              "<div>" +
-              "<label>Hole: " +
-              holedata[i].hole +
-              "</label><br/>" +
-              "<label>Type: " +
-              holedata[i].holetype +
-              "</label><br/>" +
-              "<label>Depth: " +
-              depth +
-              "</label><br/>" +
-              "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
-            bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
-            var marker = L.marker([holedata[i].lat, holedata[i].lng], {
-              icon: icon,
-              id: holedata[i].id,
-              hole: holedata[i].hole,
-              type: holedata[i].holetype,
-              collar: holedata[i].collar,
-              toe: holedata[i].toe,
-              dipped: holedata[i].dipped,
-              tap: false,
-            }).addTo(map);
+              var html =
+                "<div>" +
+                "<label>Pattern: " +
+                holedata[i].blast +
+                "</label><br/>" +
+                "<label>Hole: " +
+                holedata[i].hole +
+                "</label><br/>" +
+                "<label>Type: " +
+                holedata[i].holetype +
+                "</label><br/>" +
+                "<label>Depth: " +
+                depth +
+                "</label><br/>" +
+                "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+              bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
+              var marker = L.marker([holedata[i].lat, holedata[i].lng], {
+                icon: icon,
+                id: holedata[i].id,
+                hole: holedata[i].hole,
+                type: holedata[i].holetype,
+                collar: holedata[i].collar,
+                toe: holedata[i].toe,
+                dipped: holedata[i].dipped,
+                tap: false,
+              }).addTo(map);
 
-            marker.myID = i;
-            marker
-              .on("click", function (event) {
-                onHoleClick(event.target.myID);
-              })
-              .bindTooltip(holedata[i].hole, {
-                permanent: true,
-                direction: "right",
-                offset: [10, 0],
-                className: "leaflet-tooltip-own",
-              })
-              .bindPopup(html, window.customOptions);
-            holemarkers.addLayer(marker);
+              marker.myID = holedata[i].id;
+              marker
+                .on("click", function (event) {
+                  onHoleClick(event.target.myID);
+                })
+                .bindTooltip(holedata[i].hole, {
+                  permanent: true,
+                  direction: "right",
+                  offset: [10, 0],
+                  className: "leaflet-tooltip-own",
+                })
+                .bindPopup(html, window.customOptions);
+              holemarkers.addLayer(marker);
+            }
           }
           holemarkers.eachLayer(function (layer) {
             var depth = layer.options.Collar * 1 - layer.options.Toe * 1;
@@ -757,17 +754,14 @@
         } catch (e) {
           if (e.name == "DataCloneError")
             console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
+              "This engine doesn't know how to clone a Blob, use Firefox"
             );
           throw e;
         }
         req.onsuccess = function (evt) {
-          console.log("Reading DB successful");
-          console.log(req.result);
-          console.log(req.result.hole);
           window.holeObj = req.result;
           var depth = req.result.collar * 1 - req.result.toe * 1;
-          console.log(window.holeObj.dipped);
+
           $("#dippedval").val(window.holeObj.dipped);
         };
         req.onerror = function () {
@@ -776,18 +770,15 @@
       }
 
       function setHole() {
-        console.log(window.holeObj);
-        console.log(window.holeObj.id);
         var dipped = $("#dippedval").val() * 1;
-        console.log(dipped);
+
         window.holeObj.dipped = dipped;
         var depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
         depth = depth.toFixed(1);
         var difference = dipped - depth;
-        console.log(window.holeObj);
 
         holemarkers.eachLayer(function (layer) {
-          if (layer.options.hole * 1 === window.holeObj.id * 1) {
+          if (layer.options.hole === window.holeObj.hole) {
             holemarkers.removeLayer(layer);
           }
         });
@@ -823,6 +814,9 @@
         }
         var html =
           "<div>" +
+          "<label>Pattern: " +
+          window.holeObj.blast +
+          "</label><br/>" +
           "<label>Hole: " +
           window.holeObj.hole +
           "</label><br/>" +
@@ -858,12 +852,12 @@
         } catch (e) {
           if (e.name == "DataCloneError")
             console.log(
-              "This engine doesn't know how to clone a Blob, " + "use Firefox"
+              "This engine doesn't know how to clone a Blob, use Firefox"
             );
           throw e;
         }
         req.onsuccess = function (evt) {
-          console.log("Writing to DB successful");
+          map.closePopup();
           uploadHole(window.holeObj);
         };
         req.onerror = function () {
@@ -872,10 +866,8 @@
       }
 
       function uploadHole() {
-        console.log(JSON.stringify(window.holeObj));
         if (localStorage.getItem("bh_database") == "true") {
           if (navigator.onLine === true) {
-            console.log("online");
             $.ajax({
               url: "https://www.haulsmart.com/apis/setHole.php",
               type: "POST",
@@ -896,7 +888,6 @@
 
       function uploadPattern() {
         if (navigator.onLine === true) {
-          console.log("online");
           $.ajax({
             url: "https://www.haulsmart.com/apis/setPattern.php",
             type: "POST",
@@ -906,11 +897,9 @@
             error: function () {},
             dataType: "text",
             success: function (text) {
-              alert(text);
+              showMessage(text);
             },
           });
-        } else {
-          console.log("offline");
         }
       }
 
@@ -1022,39 +1011,33 @@
           } catch (e) {
             if (e.name == "DataCloneError")
               console.log(
-                "This engine doesn't know how to clone a Blob, " + "use Firefox"
+                "This engine doesn't know how to clone a Blob, use Firefox"
               );
             throw e;
           }
           req.onsuccess = function (evt) {
-            console.log("Reading DB successful");
-            console.log(req.result);
-            console.log(req.result.hole);
             window.holeObj = req.result;
             var depth = req.result.collar * 1 - req.result.toe * 1;
-            console.log(window.holeObj.dipped);
+
             $("#dippedval").val(window.holeObj.dipped);
 
             var dipped = $("#did" + hid).val() * 1;
-            console.log(dipped);
+
             window.holeObj.dipped = dipped;
             var depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
             depth = depth.toFixed(1);
             var difference = dipped - depth;
-            console.log(window.holeObj);
 
             try {
               req = store.put(window.holeObj);
             } catch (e) {
               if (e.name == "DataCloneError")
                 console.log(
-                  "This engine doesn't know how to clone a Blob, " +
-                    "use Firefox"
+                  "This engine doesn't know how to clone a Blob, use Firefox"
                 );
               throw e;
             }
             req.onsuccess = function (evt) {
-              console.log("Writing to DB successful");
               //uploadHole(window.holeObj);
             };
             req.onerror = function () {
@@ -1098,34 +1081,110 @@
       }
 
       $("#uploadForm").submit(function (event) {
-        var check = confirm("Do you want to upload pattern holes");
-        if (check) {
-          event.preventDefault();
-          event.stopPropagation();
-          var file = document.getElementById("csv").files[0];
-          var filename = document.getElementById("csv").value;
-          var path = filename.slice(0, 12);
-          if (filename == path + $("#patternselect").val() + ".csv") {
-            var ext = filename.substr(filename.lastIndexOf(".") + 1);
-            if (ext == "csv") {
-              var reader = new FileReader();
-              reader.readAsText(file);
-              reader.onload = function (e) {
-                var header =
-                  "Pattern,Hole,Lng,Lat,Collar,Hole,Toe,Dia,Brg,Angle";
-                var csvString = header + "\n" + e.target.result;
-                var data = JSON.stringify($.csv.toObjects(csvString));
-              };
-            } else {
-              alert("Please ensure you upload a csv file");
-            }
-          } else {
-            alert(
-              "Please check the filename of csv as it doesnt match polygon name"
-            );
-          }
+        event.preventDefault();
+        event.stopPropagation();
+        var file = document.getElementById("csv").files[0];
+        var filename = document.getElementById("csv").value;
+        var path = filename.slice(0, 12);
+        var ext = filename.substr(filename.lastIndexOf(".") + 1);
+        if (ext === "csv") {
+          var reader = new FileReader();
+          reader.readAsText(file);
+          reader.onload = function (e) {
+            var header = "Hole,Lng,Lat,Collar,Toe,Dia,Brg,Angle";
+            var csvString = header + "\n" + e.target.result;
+            var data = JSON.stringify($.csv.toObjects(csvString));
+
+            let pattern = $("#pattern").val();
+            var url =
+              "https://www.haulsmart.com/apis/drillcsvjson.php?id=" +
+              pattern +
+              "&username=" +
+              localStorage.getItem("email") +
+              "&password=" +
+              localStorage.getItem("password") +
+              "&lat=" +
+              currentlat +
+              "&lng=" +
+              currentlng;
+            $.ajax({
+              url: url,
+              type: "POST",
+              dataType: "json",
+              crossDomain: true,
+              data: { json: data },
+              success: function (data) {
+                localStorage.setItem("pattern", pattern);
+
+                holemarkers.clearLayers();
+                var bounds = L.latLngBounds();
+                let geojson = data[0];
+                L.geoJson(data[1], {
+                  style: areaStyle,
+                  onEachFeature: onEachFeature,
+                }).addTo(map);
+                for (var j = 0; j < geojson.features.length; j++) {
+                  var coords = geojson.features[j].geometry.coordinates;
+                  bounds.extend([coords[1], coords[0]]);
+                  var depth = (
+                    geojson.features[j].properties.Collar -
+                    geojson.features[j].properties.Toe
+                  ).toFixed(1);
+                  var html =
+                    "<div>" +
+                    "<label>Pattern: " +
+                    geojson.features[j].properties.Blast +
+                    "</label><br/>" +
+                    "<label>Hole: " +
+                    geojson.features[j].properties.Hole +
+                    "</label><br/>" +
+                    "<label>Type: " +
+                    geojson.features[j].properties.HoleType +
+                    "</label><br/>" +
+                    "<label>Depth: " +
+                    depth +
+                    "</label><br/>" +
+                    "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+                  var marker = L.marker([coords[1], coords[0]], {
+                    icon: L.icon({
+                      iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
+                      iconSize: [10, 10],
+                      iconAnchor: [5, 5],
+                    }),
+                    id: geojson.features[j].properties.Hole,
+                    type: geojson.features[j].properties.HoleType,
+                    collar: geojson.features[j].properties.Collar,
+                    toe: geojson.features[j].properties.Toe,
+                    dia: geojson.features[j].properties.Dia,
+                    tap: false,
+                  }).addTo(map);
+                  marker.myID = j;
+                  marker
+                    .on("click", function (event) {
+                      onHoleClick(event.target.myID);
+                    })
+                    .bindPopup(html);
+                  holemarkers.addLayer(marker);
+                  addHole(
+                    geojson.features[j].properties.Blast,
+                    geojson.features[j].properties.Hole,
+                    geojson.features[j].properties.HoleType,
+                    geojson.features[j].properties.Collar,
+                    geojson.features[j].properties.Toe,
+                    geojson.features[j].properties.Angle,
+                    geojson.features[j].properties.Dipped,
+                    coords[1],
+                    coords[0]
+                  );
+                }
+                map.fitBounds(bounds);
+                map.panTo(bounds.getCenter());
+                $("#uploadform").hide();
+              },
+            });
+          };
         } else {
-          $("#uploadpanel").hide();
+          showMessage("Please ensure you upload a csv file");
         }
       });
     </script>
