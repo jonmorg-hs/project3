@@ -42,7 +42,7 @@ const AppNavbar = () => {
 
   return (
     <>
-      <Navbar expand="lg">
+      <Navbar expand="dark">
         <Container fluid>
           <Navbar.Toggle aria-controls="navbar" />
           <Navbar.Collapse id="navbar">
@@ -56,10 +56,8 @@ const AppNavbar = () => {
                   <Nav.Link onClick={() => workSheet()}>
                     <div className="option">Worksheet</div>
                   </Nav.Link>
-                  <Nav.Link onClick={() => uploadCSV()}>
-                    <div id="uploadcsv" className="option">
-                      Upload CSV
-                    </div>
+                  <Nav.Link id="uploadcsv" onClick={() => uploadCSV()}>
+                    <div className="option">Upload CSV</div>
                   </Nav.Link>
                   <Nav.Link onClick={Auth.logout}>
                     <div className="option">Logout</div>
@@ -67,13 +65,13 @@ const AppNavbar = () => {
                 </>
               ) : (
                 <>
+                  <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
+                    <div className="option">Login/SignUp</div>
+                  </Nav.Link>
                   <Nav.Link onClick={() => installPWA()}>
                     <div id="buttonInstall" className="installoption">
                       Install APP
                     </div>
-                  </Nav.Link>
-                  <Nav.Link id="loginlink" onClick={() => setShowModal(true)}>
-                    <div className="option">Login/SignUp</div>
                   </Nav.Link>
                 </>
               )}

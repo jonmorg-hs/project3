@@ -1,6 +1,7 @@
 import $ from "jquery";
 
 const syncData = () => {
+  //localStorage.setItem("bh_database", "false");
   if (localStorage.getItem("bh_database") === "true") {
     let message = "Syncing with HaulSmart";
     $("#message").html(message).css({ display: "table-cell" }).show();
@@ -86,7 +87,11 @@ const syncData = () => {
     //  }
     //);
   } else {
-    alert("Syncing with cloud");
+    let message = "Syncing with Cloud";
+    $("#message").html(message).css({ display: "table-cell" }).show();
+    setTimeout(function () {
+      $("#message").html("").hide();
+    }, 3000);
   }
 };
 

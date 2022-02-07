@@ -1,4 +1,4 @@
-let CACHE_NAME = "dippingmap_cache17";
+let CACHE_NAME = "dippingmap_cache20";
 
 let urlsToCache = [
   "/",
@@ -17,6 +17,7 @@ let urlsToCache = [
   "/favicon.png",
   "/logo192.png",
   "/logo512.png",
+  "/menu.png",
 
   "/jquery-csv.js",
   "https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap",

@@ -109,6 +109,13 @@
       </form>
       <!--<img src='images/downloadcsv.png' style='cursor:pointer;width:20px;height:20px' title='Download CSV template' /><a class="fileDownloadPromise" href="templates/pattern_template.csv?n=1">Download Drill Pattern Template</a>-->
     </div>
+    <div id="summary">
+      <label id="summary_pattern"></label><br /><br />
+      <label id="design_holes">Design Holes:</label><br />
+      <label id="design_mtrs">Design Mtrs:</label><br />
+      <label id="dipped_holes">Dipped Holes:</label><br />
+      <label id="dipped_mtrs">Dipped Metres:</label><br />
+    </div>
     <script>
       window.login = false;
       window.email;
@@ -123,6 +130,9 @@
       }
       let sitelat = localStorage.getItem("sitelat") * 1;
       let sitelng = localStorage.getItem("sitelng") * 1;
+
+      let dipped_holes;
+      let dipped_mtrs;
 
       let wpid = false;
       let currentpos;
@@ -295,6 +305,10 @@
           );
         } else {
           showMessage("Your browser does not support the Geolocation API");
+        }
+        $("#summary_pattern").html(localStorage.getItem("pattern"));
+        if (localStorage.getItem("bh_database") === "false") {
+          $("#uploadcsv").hide();
         }
       });
 
@@ -654,10 +668,15 @@
           let holedata = req.result;
           patterndata = req.result;
           var bounds = L.latLngBounds();
-
+          design_holes = 0;
+          design_mtrs = 0;
+          dipped_holes = 0;
+          dipped_mtrs = 0;
           for (var i = 0; i < holedata.length; i++) {
             if (holedata[i].blast == pattern) {
+              design_holes += 1;
               var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
+              design_mtrs += depth * 1;
               var difference = holedata[i].dipped - depth;
               if (holedata[i].dipped * 1 === 0) {
                 var icon = L.icon({
@@ -666,6 +685,8 @@
                   iconAnchor: [5, 5],
                 });
               } else {
+                dipped_holes += 1;
+                dipped_mtrs += holedata[i].dipped * 1;
                 if (difference > -0.3 && difference < 0.3) {
                   var icon = L.icon({
                     iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
@@ -702,7 +723,7 @@
                 "<label>Depth: " +
                 depth +
                 "</label><br/>" +
-                "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+                "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
               bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
               var marker = L.marker([holedata[i].lat, holedata[i].lng], {
                 icon: icon,
@@ -730,6 +751,11 @@
               holemarkers.addLayer(marker);
             }
           }
+          $("#design_holes").html("Design Holes: " + design_holes);
+          $("#design_mtrs").html("Design Mtrs: " + design_mtrs.toFixed(1));
+          $("#dipped_holes").html("Dipped Holes: " + dipped_holes);
+          $("#dipped_mtrs").html("Dipped Metres: " + dipped_mtrs.toFixed(1));
+          $("#summary").show();
           holemarkers.eachLayer(function (layer) {
             var depth = layer.options.Collar * 1 - layer.options.Toe * 1;
             var difference = layer.options.dipped * 1 - depth;
@@ -743,8 +769,12 @@
       }
 
       window.holeObj;
+      window.alreadydipped;
+      window.alreadydippedmtrs;
 
       function getHole(id) {
+        window.alreadydipped = 0;
+        window.alreadydippedmtrs = 0;
         var store = window.db
           .transaction(window.DB_STORE_NAME, "readwrite")
           .objectStore(window.DB_STORE_NAME);
@@ -760,8 +790,11 @@
         }
         req.onsuccess = function (evt) {
           window.holeObj = req.result;
+          if (window.holeObj.dipped > 0) {
+            alreadydipped = 1;
+            alreadydippedmtrs = window.holeObj.dipped;
+          }
           var depth = req.result.collar * 1 - req.result.toe * 1;
-
           $("#dippedval").val(window.holeObj.dipped);
         };
         req.onerror = function () {
@@ -771,7 +804,14 @@
 
       function setHole() {
         var dipped = $("#dippedval").val() * 1;
-
+        if ((alreadydipped = 1)) {
+          dipped_holes = dipped_holes - 1;
+          dipped_mtrs = dipped_mtrs - window.alreadydippedmtrs;
+        }
+        dipped_holes += 1;
+        dipped_mtrs += dipped;
+        $("#dipped_holes").html("Dipped Holes: " + dipped_holes);
+        $("#dipped_mtrs").html("Dipped Metres: " + dipped_mtrs.toFixed(1));
         window.holeObj.dipped = dipped;
         var depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
         depth = depth.toFixed(1);
@@ -826,7 +866,7 @@
           "<label>Depth: " +
           depth +
           "</label><br/>" +
-          "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+          "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
         var marker = L.marker([window.holeObj.lat, window.holeObj.lng], {
           icon: icon,
           id: window.holeObj.id,
@@ -837,12 +877,15 @@
           dipped: window.holeObj.dipped,
           tap: false,
         }).addTo(map);
-
         marker.myID = window.holeObj.id;
-        marker.on("click", function (event) {
-          onHoleClick(event.target.myID);
-        });
+        marker
+          .on("click", function (event) {
+            onHoleClick(event.target.myID);
+          })
+          .bindPopup(html, window.customOptions);
         holemarkers.addLayer(marker);
+        window.alreadydipped = 0;
+        window.alreadydippedmtrs = 0;
         var store = window.db
           .transaction(window.DB_STORE_NAME, "readwrite")
           .objectStore(window.DB_STORE_NAME);
@@ -999,13 +1042,14 @@
         $("#worksheet").html(html).show();
 
         $(".save").bind("change", function () {
-          var str = $(this).attr("id");
-          var hid = str.substr(3);
+          let str = $(this).attr("id");
+          let hid = str.substr(3);
           hid = hid * 1;
-          var store = window.db
+          let hdipped = $(this).attr("dipped") * 1;
+          let store = window.db
             .transaction(window.DB_STORE_NAME, "readwrite")
             .objectStore(window.DB_STORE_NAME);
-          var req;
+          let req;
           try {
             req = store.get(hid);
           } catch (e) {
@@ -1017,17 +1061,23 @@
           }
           req.onsuccess = function (evt) {
             window.holeObj = req.result;
-            var depth = req.result.collar * 1 - req.result.toe * 1;
-
             $("#dippedval").val(window.holeObj.dipped);
-
-            var dipped = $("#did" + hid).val() * 1;
-
+            let dipped = $("#did" + hid).val() * 1;
             window.holeObj.dipped = dipped;
-            var depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
+            let depth = window.holeObj.collar * 1 - window.holeObj.toe * 1;
             depth = depth.toFixed(1);
-            var difference = dipped - depth;
-
+            let difference = dipped - depth;
+            if (hdipped > 0) {
+              window.dipped_holes = window.dipped_holes - 1;
+              window.dipped_mtrs - window.dipped_mtrs - hdipped;
+            }
+            window.dipped_holes += 1;
+            window.dipped_mtrs += dipped;
+            $("#dipped_holes").html("Dipped Holes: " + window.dipped_holes);
+            $("#dipped_mtrs").html(
+              "Dipped Metres: " + window.dipped_mtrs.toFixed(1)
+            );
+            $(this).attr("dipped", dipped);
             try {
               req = store.put(window.holeObj);
             } catch (e) {
@@ -1144,7 +1194,7 @@
                     "<label>Depth: " +
                     depth +
                     "</label><br/>" +
-                    "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' onchange=\"setHole()\" value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+                    "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
                   var marker = L.marker([coords[1], coords[0]], {
                     icon: L.icon({
                       iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",

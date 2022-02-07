@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const blastSchema = new Schema({
-  blastid: {
+  blastId: {
     type: String,
     required: true,
   },

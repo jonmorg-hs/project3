@@ -42,6 +42,12 @@ const patternSchema = new Schema({
     type: Number,
     required: true,
   },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
+
+const Pattern = model("Pattern", patternSchema);
 
 module.exports = patternSchema;
