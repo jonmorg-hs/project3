@@ -443,7 +443,7 @@
       //indexedDB functions
       window.db;
       window.DB_NAME = "blasts";
-      window.DB_VERSION = 3;
+      window.DB_VERSION = 4;
       window.DB_STORE_NAME = "patterns";
 
       //open indexedDB
@@ -465,9 +465,19 @@
         };
 
         req.onupgradeneeded = function (evt) {
-          evt.currentTarget.result.deleteObjectStore("polygons");
-          evt.currentTarget.result.deleteObjectStore("patterns");
-          //evt.currentTarget.result.deleteObjectStore("offlineholes");
+          var req = indexedDB.deleteDatabase("blasts");
+          req.onsuccess = function () {
+            console.log("Deleted database successfully");
+          };
+          req.onerror = function () {
+            console.log("Couldn't delete database");
+          };
+          req.onblocked = function () {
+            console.log(
+              "Couldn't delete database due to the operation being blocked"
+            );
+          };
+
           var polygonstore = evt.currentTarget.result.createObjectStore(
             "polygons",
             {
