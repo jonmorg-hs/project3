@@ -20,7 +20,7 @@ The user can Sync the device data with the cloud database when internet network 
 
 # Screenshot
 
-<img src="../../tree/main/client/public/images/db_screenshot.png">
+<img src="../../blob/main/client/public/images/db_screenshot.png">
 
 # Installation
 
