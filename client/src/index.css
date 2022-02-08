@@ -242,3 +242,44 @@ form {
   border: none !important;
   outline: none !important;
 }
+
+#progresscontainer {
+  display: none;
+  position: absolute;
+  bottom: 50%;
+  height: 30px;
+  left: 25%;
+  width: 50%;
+  background-color: #66b2ff;
+  background: transparent;
+  border: 1px solid #66b2ff;
+}
+#progress-bar {
+  position: absolute;
+  height: 25px;
+  width: 0px;
+  margin-top: 0px;
+  background-color: #66b2ff;
+  z-index: 4;
+  -webkit-border-radius: 5px;
+  border-radius: 1px;
+  border: 16px solid #66b2ff;
+}
+
+progress.blue {
+  background-color: #66b2ff;
+  color: #66b2ff;
+}
+progress.blue[value] {
+  color: #66b2ff;
+} /* IE10 */
+
+progress.blue::-webkit-progress-bar-value {
+  background-color: #66b2ff;
+}
+progress.blue::-webkit-progress-value {
+  background-color: #66b2ff;
+}
+progress.blue::-moz-progress-bar {
+  background-color: #66b2ff;
+}

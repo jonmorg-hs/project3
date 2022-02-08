@@ -28,6 +28,7 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css"
     />
+    <link rel="stylesheet" href="progressbar.css" />
     <script
       src="https://kit.fontawesome.com/05c6b543c0.js"
       crossorigin="anonymous"
@@ -42,6 +43,7 @@
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
     <script src="jquery-csv.js"></script>
+    <script src="progressbar.js"></script>
   </head>
   <body>
     <div id="map"></div>
@@ -139,11 +141,6 @@
       let currentPositionMarker;
       let currentlat, currentlng;
 
-      let markerscales = [
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 18, 22, 25, 28, 32, 35, 38, 40, 42,
-        44, 46, 48, 50,
-      ];
-
       let currentposmarker = new L.LayerGroup();
       let holemarkers = new L.LayerGroup();
       let patternmarkers = new L.LayerGroup();
@@ -188,9 +185,6 @@
         }
         map.on("zoomend", function () {
           let currentZoom = map.getZoom();
-          let newSize = markerscales[currentZoom];
-          let newoffset = -1 * newSize - 5;
-          let newmidoffset = newSize / 2;
           if (map.getZoom() < 21) {
             $(".leaflet-tooltip-own").css("display", "none");
           } else {
@@ -234,8 +228,6 @@
           openDb();
         }
       }
-
-      //currentposmarker.addTo(map);
 
       function displayAndWatch(position) {
         setCurrentPosition(position);
@@ -291,6 +283,30 @@
         currentposmarker.addLayer(currentPositionMarker);
       }
 
+      //get user location every 5 seconds
+      setInterval(function () {
+        if (!!navigator.geolocation) {
+          wpid = navigator.geolocation.getCurrentPosition(
+            displayAndWatch,
+            locError,
+            {
+              maximumAge: 0,
+              timeout: 1000,
+              enableHighAccuracy: true,
+            }
+          );
+        }
+      }, 5000);
+
+      function centerUser() {
+        map.setView(new L.LatLng(currentlat, currentlng), 18);
+      }
+
+      function centerSite() {
+        map.setView(new L.LatLng(sitelat, sitelng), 18);
+      }
+
+      //when dom body ready, initiate the map and geolocation
       $(document).ready(function () {
         initMap();
         if (!!navigator.geolocation) {
@@ -312,6 +328,7 @@
         }
       });
 
+      //alert message function
       function showMessage(message) {
         $("#message").html(message).css({ display: "table-cell" }).show();
         setTimeout(function () {
@@ -320,6 +337,8 @@
       }
 
       var geojson = [];
+
+      //get all indexedDB stored polygons
 
       function getPolygons() {
         if ((window.login = true)) {
@@ -380,12 +399,14 @@
         }
       }
 
+      //polygon event listener
       function onEachFeature(feature, layer) {
         layer.on({
           click: onClick,
         });
       }
 
+      //styling the polygon
       function areaStyle(feature) {
         return {
           strokeColor: feature.properties.strokeColor,
@@ -396,35 +417,19 @@
         };
       }
 
-      var blastKey;
+      //polygon event listener
       function onClick(e) {
-        blastKey = e.target.feature.properties.Key;
-        // getBounds(blastKey);
         getPattern(e.target.feature.properties.Block);
         $("#summary_pattern").html(e.target.feature.properties.Block);
       }
 
-      function getBounds(blastKey) {
-        var bounds = L.latLngBounds();
-        for (var j = 0; j < geojson.features.length; j++) {
-          if (geojson.features[j].properties.Key === blastKey) {
-            if (geojson.features[j].geometry.type == "Polygon") {
-              var coords = geojson.features[j].geometry.coordinates[0];
-              for (var i = 0; i < coords.length; i++) {
-                bounds.extend(L.latLng(coords[i][1], coords[i][0]));
-              }
-            }
-          }
-        }
-        map.fitBounds(bounds);
-        map.panTo(bounds.getCenter());
-        //getholedata();
-      }
+      //Hole event listener
 
       function onHoleClick(id) {
         getHole(id);
       }
 
+      //Styling the polygons
       function patternStyle(feature) {
         return {
           i: feature.properties.fillColor,
@@ -435,25 +440,13 @@
         };
       }
 
-      setInterval(function () {
-        if (!!navigator.geolocation) {
-          wpid = navigator.geolocation.getCurrentPosition(
-            displayAndWatch,
-            locError,
-            {
-              maximumAge: 0,
-              timeout: 1000,
-              enableHighAccuracy: true,
-            }
-          );
-        }
-      }, 5000);
-
+      //indexedDB functions
       window.db;
       window.DB_NAME = "blasts";
-      window.DB_VERSION = 1;
+      window.DB_VERSION = 3;
       window.DB_STORE_NAME = "patterns";
 
+      //open indexedDB
       function openDb() {
         var req = indexedDB.open(window.DB_NAME, window.DB_VERSION);
         req.onsuccess = function (evt) {
@@ -464,7 +457,7 @@
             localStorage.getItem("pattern") === undefined
           ) {
           } else {
-            getPattern(localStorage.getItem("pattern"));
+            getPattern(localStorage.getItem("pattern")); //automatically get last accessed pattern
           }
         };
         req.onerror = function (evt) {
@@ -472,6 +465,9 @@
         };
 
         req.onupgradeneeded = function (evt) {
+          evt.currentTarget.result.deleteObjectStore("polygons");
+          evt.currentTarget.result.deleteObjectStore("patterns");
+          //evt.currentTarget.result.deleteObjectStore("offlineholes");
           var polygonstore = evt.currentTarget.result.createObjectStore(
             "polygons",
             {
@@ -479,6 +475,7 @@
               autoIncrement: true,
             }
           );
+
           var store = evt.currentTarget.result.createObjectStore(
             window.DB_STORE_NAME,
             {
@@ -496,9 +493,28 @@
           store.createIndex("dipped", "dipped", { unique: false });
           store.createIndex("lat", "lat", { unique: false });
           store.createIndex("lng", "lng", { unique: false });
+
+          var offlinestore = evt.currentTarget.result.createObjectStore(
+            "offlineholes",
+            {
+              keyPath: "id",
+              autoIncrement: true,
+            }
+          );
+          offlinestore.createIndex("id", "id", { unique: true });
+          offlinestore.createIndex("blast", "blast", { unique: false });
+          offlinestore.createIndex("hole", "hole", { unique: false });
+          offlinestore.createIndex("holetype", "holetype", { unique: false });
+          offlinestore.createIndex("collar", "collar", { unique: false });
+          offlinestore.createIndex("toe", "toe", { unique: false });
+          offlinestore.createIndex("angle", "angle", { unique: false });
+          offlinestore.createIndex("dipped", "dipped", { unique: false });
+          offlinestore.createIndex("lat", "lat", { unique: false });
+          offlinestore.createIndex("lng", "lng", { unique: false });
         };
       }
 
+      //add hole data to the IndexedDB store 'patterns'
       function addHole(
         blast,
         hole,
@@ -540,17 +556,20 @@
         };
       }
 
+      pbounds = L.latLngBounds();
+
+      //get selected or localStorage pattern
+
       function getPattern(pattern) {
-        console.log(pattern);
         if (pattern !== null || pattern !== undefined) {
           holemarkers.clearLayers();
           var store = window.db
             .transaction(window.DB_STORE_NAME, "readwrite")
             .objectStore(window.DB_STORE_NAME);
-
           var req;
           try {
-            req = store.getAll();
+            var myIndex = store.index("blast");
+            var getRequest = myIndex.get(pattern);
           } catch (e) {
             if (e.name == "DataCloneError")
               console.log(
@@ -558,97 +577,102 @@
               );
             throw e;
           }
-          req.onsuccess = function (evt) {
-            let holedata = req.result;
-            patterndata = req.result;
-            console.log(holedata);
-            var bounds = L.latLngBounds();
+          getRequest.onsuccess = function () {
+            console.log(getRequest.result);
+            localStorage.setItem("pattern", pattern);
             design_holes = 0;
             design_mtrs = 0;
             dipped_holes = 0;
             dipped_mtrs = 0;
-            for (var i = 0; i < holedata.length; i++) {
-              if (holedata[i].blast == pattern) {
-                bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
-                design_holes += 1;
-                var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
-                design_mtrs += depth * 1;
-                var difference = holedata[i].dipped - depth;
-                if (holedata[i].dipped * 1 === 0) {
+          };
+
+          myIndex.openCursor(pattern).onsuccess = function (event) {
+            let cursor = event.target.result;
+
+            if (cursor) {
+              pbounds.extend(L.latLng(cursor.value.lat, cursor.value.lng));
+              design_holes += 1;
+              var depth = (cursor.value.collar - cursor.value.toe).toFixed(1);
+              design_mtrs += depth * 1;
+              var difference = cursor.value.dipped - depth;
+              if (cursor.value.dipped * 1 === 0) {
+                var icon = L.icon({
+                  iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
+                  iconSize: [10, 10],
+                  iconAnchor: [5, 5],
+                });
+              } else {
+                dipped_holes += 1;
+                dipped_mtrs += cursor.value.dipped * 1;
+                if (difference > -0.3 && difference < 0.3) {
                   var icon = L.icon({
-                    iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
+                    iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
                     iconSize: [10, 10],
                     iconAnchor: [5, 5],
                   });
                 } else {
-                  dipped_holes += 1;
-                  dipped_mtrs += holedata[i].dipped * 1;
-                  if (difference > -0.3 && difference < 0.3) {
+                  if (difference > -0.5 && difference < 0.5) {
                     var icon = L.icon({
-                      iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
+                      iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
                       iconSize: [10, 10],
                       iconAnchor: [5, 5],
                     });
                   } else {
-                    if (difference > -0.5 && difference < 0.5) {
-                      var icon = L.icon({
-                        iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
-                        iconSize: [10, 10],
-                        iconAnchor: [5, 5],
-                      });
-                    } else {
-                      var icon = L.icon({
-                        iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
-                        iconSize: [10, 10],
-                        iconAnchor: [5, 5],
-                      });
-                    }
+                    var icon = L.icon({
+                      iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
+                      iconSize: [10, 10],
+                      iconAnchor: [5, 5],
+                    });
                   }
                 }
-                var html =
-                  "<div>" +
-                  "<label>Pattern: " +
-                  holedata[i].blast +
-                  "</label><br/>" +
-                  "<label>Hole: " +
-                  holedata[i].hole +
-                  "</label><br/>" +
-                  "<label>Type: " +
-                  holedata[i].holetype +
-                  "</label><br/>" +
-                  "<label>Depth: " +
-                  depth +
-                  "</label><br/>" +
-                  "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
-
-                var marker = L.marker([holedata[i].lat, holedata[i].lng], {
-                  icon: icon,
-                  id: holedata[i].id,
-                  hole: holedata[i].hole,
-                  type: holedata[i].holetype,
-                  collar: holedata[i].collar,
-                  toe: holedata[i].toe,
-                  dipped: holedata[i].dipped,
-                  tap: false,
-                }).addTo(map);
-
-                marker.myID = holedata[i].id;
-                marker
-                  .on("click", function (event) {
-                    onHoleClick(event.target.myID);
-                  })
-                  .bindTooltip(holedata[i].hole, {
-                    permanent: true,
-                    direction: "right",
-                    offset: [10, 0],
-                    className: "leaflet-tooltip-own",
-                  })
-                  .bindPopup(html, window.customOptions);
-                holemarkers.addLayer(marker);
               }
+              var html =
+                "<div>" +
+                "<label>Pattern: " +
+                cursor.value.blast +
+                "</label><br/>" +
+                "<label>Hole: " +
+                cursor.value.hole +
+                "</label><br/>" +
+                "<label>Type: " +
+                cursor.value.holetype +
+                "</label><br/>" +
+                "<label>Depth: " +
+                depth +
+                "</label><br/>" +
+                "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+
+              var marker = L.marker([cursor.value.lat, cursor.value.lng], {
+                icon: icon,
+                id: cursor.value.id,
+                hole: cursor.value.hole,
+                type: cursor.value.holetype,
+                collar: cursor.value.collar,
+                toe: cursor.value.toe,
+                dipped: cursor.value.dipped,
+                tap: false,
+              }).addTo(map);
+
+              marker.myID = cursor.value.id;
+              marker
+                .on("click", function (event) {
+                  onHoleClick(event.target.myID);
+                })
+                .bindTooltip(cursor.value.hole, {
+                  permanent: true,
+                  direction: "right",
+                  offset: [10, 0],
+                  className: "leaflet-tooltip-own",
+                })
+                .bindPopup(html, window.customOptions);
+              holemarkers.addLayer(marker);
+
+              cursor.continue();
+            } else {
+              showMessage(pattern + " Loaded");
             }
-            map.fitBounds(bounds);
-            map.panTo(bounds.getCenter());
+            map.fitBounds(pbounds);
+            map.panTo(pbounds.getCenter());
             $("#design_holes").html("Design Holes: " + design_holes);
             $("#design_mtrs").html("Design Mtrs: " + design_mtrs.toFixed(1));
             $("#dipped_holes").html("Dipped Holes: " + dipped_holes);
@@ -659,9 +683,6 @@
               var difference = layer.options.dipped * 1 - depth;
             });
           };
-          req.onerror = function () {
-            console.error("read db error", this.error);
-          };
         }
       }
 
@@ -669,6 +690,7 @@
       window.alreadydipped;
       window.alreadydippedmtrs;
 
+      //get hole from IndexedDB pattern store
       function getHole(id) {
         window.alreadydipped = 0;
         window.alreadydippedmtrs = 0;
@@ -699,6 +721,7 @@
         };
       }
 
+      //save hole depth to pattern store and redraw hole icon
       function setHole() {
         var dipped = $("#dippedval").val() * 1;
         if ((alreadydipped = 1)) {
@@ -805,6 +828,7 @@
         };
       }
 
+      //upload hole data to HaulSmart database if internet connected else push to offline holes store
       function uploadHole() {
         if (localStorage.getItem("bh_database") == "true") {
           if (navigator.onLine === true) {
@@ -821,25 +845,28 @@
               },
             });
           } else {
-            showMessage("OFFLINE: Hole not updated on HaulSmart");
+            var store = window.db
+              .transaction("offlineholes", "readwrite")
+              .objectStore("offlineholes");
+            var req;
+            try {
+              req = store.put(window.holeObj);
+            } catch (e) {
+              if (e.name == "DataCloneError")
+                console.log(
+                  "This engine doesn't know how to clone a Blob, use Firefox"
+                );
+              throw e;
+            }
+            req.onsuccess = function (evt) {
+              showMessage(
+                "OFFLINE: Hole stored for uploading when internet connected"
+              );
+            };
+            req.onerror = function () {
+              console.error("read db error", this.error);
+            };
           }
-        }
-      }
-
-      function uploadPattern() {
-        if (navigator.onLine === true) {
-          $.ajax({
-            url: "https://www.haulsmart.com/apis/setPattern.php",
-            type: "POST",
-            crossDomain: true,
-            data: { json: JSON.stringify(patterdata) },
-            timeout: 10000,
-            error: function () {},
-            dataType: "text",
-            success: function (text) {
-              showMessage(text);
-            },
-          });
         }
       }
 
@@ -882,6 +909,7 @@
         sortWorksheet();
       }
 
+      //sorting the worksheet by either gps or alphabetically
       function sortWorksheet() {
         var html =
           "<img src='images/btn-close@2x.png' style='cursor:pointer;margin-left:5px;width:50px;height:50px;' onclick=\"$('#worksheet').hide();$('#lpanel').hide();$('#panelout').show();$('#panelin').hide()\" ><label style='margin-left:20px;font:bold 30px Arial'><?php echo $id;?></label><div style='text-align:left;font:Bold 30px Arial'></div><br/>";
@@ -997,6 +1025,8 @@
         });
       }
 
+      //calculating distance between user position and hole position to sort worksheet closest to furthest hole
+
       function getDistance(origin, destination) {
         // return distance in meters
         var lon1 = toRadian(origin[1]),
@@ -1015,18 +1045,12 @@
         return c * EARTH_RADIUS * 1000;
       }
 
+      //convert to Radians
       function toRadian(degree) {
         return (degree * Math.PI) / 180;
       }
 
-      function centerUser() {
-        map.setView(new L.LatLng(currentlat, currentlng), 18);
-      }
-
-      function centerSite() {
-        map.setView(new L.LatLng(currentlat, currentlng), 18);
-      }
-
+      //upload csv pattern file for storing in indexedDB
       $("#uploadForm").submit(function (event) {
         event.preventDefault();
         event.stopPropagation();
