@@ -319,126 +319,64 @@
         }, 3000);
       }
 
-      var geojson;
+      var geojson = [];
 
       function getPolygons() {
         if ((window.login = true)) {
-          if (localStorage.getItem("bh_database") == "true") {
-            if (navigator.onLine) {
-              showMessage("CONNECTED: Syncing with HaulSmart");
-              var url =
-                "https://www.haulsmart.com/apis/blastpolygons.php?email=" +
-                localStorage.getItem("email") +
-                "&password=" +
-                localStorage.getItem("password");
-              $.ajax({
-                url: url,
-                dataType: "json",
-                type: "GET",
-                async: false,
-                success: function (data) {
-                  geojson = data;
-
-                  L.geoJson(geojson, {
-                    style: areaStyle,
-                    onEachFeature: onEachFeature,
-                  }).addTo(map);
-                  for (var j = 0; j < geojson.features.length; j++) {
-                    var marker = L.marker(
-                      [
-                        geojson.features[j].properties.lat,
-                        geojson.features[j].properties.lng,
-                      ],
-                      {
-                        icon: L.icon({
-                          iconUrl: "%PUBLIC_URL%/images/bh_blue.png?n=1",
-                          iconSize: [2, 2],
-                          iconAnchor: [1, 1],
-                        }),
-                        tap: false,
-                      }
-                    ).addTo(map);
-                    marker.bindTooltip(geojson.features[j].properties.Block, {
-                      permanent: true,
-                      direction: "right",
-                      offset: [0, 0],
-                      className: "patternmarkers",
-                    });
-                    patternmarkers.addLayer(marker);
-                  }
-                  var store = window.db
-                    .transaction("polygons", "readwrite")
-                    .objectStore("polygons");
-                  var req;
-                  req = store.clear();
-                  try {
-                    req = store.add(geojson);
-                  } catch (e) {
-                    throw e;
-                  }
-                  req.onsuccess = function (evt) {
-                    showMessage("Insertion in device storage successful");
-                  };
-                  req.onerror = function () {
-                    showMessage(
-                      "Insertion in device storage Failed ",
-                      this.error
-                    );
-                  };
-                },
-                error: function () {
-                  showMessage("ERROR: Cannot sync with HaulSmart");
-                },
-              });
-            } else {
-              showMessage("OFFLINE: Cannot sync with HaulSmart");
-            }
-          } else {
-            var store = window.db
-              .transaction("polygons", "readwrite")
-              .objectStore("polygons");
-            var req;
-            try {
-              req = store.getAll();
-            } catch (e) {
-              console.log(e);
-            }
-            req.onsuccess = function (evt) {
-              delete req.result[0]["id"];
-              geojson = req.result;
-
-              L.geoJson(req.result[0], {
-                style: areaStyle,
-                onEachFeature: onEachFeature,
-              }).addTo(map);
-              for (var j = 0; j < geojson.features.length; j++) {
-                var marker = L.marker(
-                  [
-                    geojson.features[j].properties.lat,
-                    geojson.features[j].properties.lng,
-                  ],
-                  {
-                    icon: L.icon({
-                      iconUrl: "%PUBLIC_URL%/images/bh_blue.png?n=1",
-                      iconSize: [2, 2],
-                      iconAnchor: [1, 1],
-                    }),
-                    tap: false,
-                  }
-                ).addTo(map);
-                marker.bindTooltip(geojson.features[j].properties.Block, {
-                  permanent: true,
-                  direction: "right",
-                  offset: [0, 0],
-                  className: "patternmarkers",
-                });
-                patternmarkers.addLayer(marker);
-              }
-            };
-            req.onerror = function () {
-              console.error("read db error", this.error);
-            };
+          var store = window.db
+            .transaction("polygons", "readwrite")
+            .objectStore("polygons");
+          var req;
+          try {
+            req = store.getAll();
+          } catch (e) {
+            console.log(e);
           }
+          req.onsuccess = function (evt) {
+            delete req.result[0]["id"];
+            geojson = req.result[0];
+            L.geoJson(geojson, {
+              style: areaStyle,
+              onEachFeature: onEachFeature,
+            }).addTo(map);
+            var bounds = L.latLngBounds();
+            for (var j = 0; j < geojson.features.length; j++) {
+              if (geojson.features[j].geometry.type === "Polygon") {
+                var coords = geojson.features[j].geometry.coordinates[0];
+                for (var i = 0; i < coords.length; i++) {
+                  if (coords[i][1] !== undefined || coords[i][1] !== 0) {
+                    bounds.extend(L.latLng(coords[i][1], coords[i][0]));
+                  }
+                }
+              }
+              var marker = L.marker(
+                [
+                  geojson.features[j].properties.lat,
+                  geojson.features[j].properties.lng,
+                ],
+                {
+                  icon: L.icon({
+                    iconUrl: "%PUBLIC_URL%/images/bh_blue.png?n=1",
+                    iconSize: [2, 2],
+                    iconAnchor: [1, 1],
+                  }),
+                  tap: false,
+                }
+              ).addTo(map);
+              marker.bindTooltip(geojson.features[j].properties.Block, {
+                permanent: true,
+                direction: "right",
+                offset: [0, 0],
+                className: "patternmarkers",
+              });
+              patternmarkers.addLayer(marker);
+            }
+            map.fitBounds(bounds);
+            map.panTo(bounds.getCenter());
+          };
+          req.onerror = function () {
+            console.error("read db error", this.error);
+          };
         }
       }
 
@@ -461,7 +399,9 @@
       var blastKey;
       function onClick(e) {
         blastKey = e.target.feature.properties.Key;
-        getBounds(blastKey);
+        // getBounds(blastKey);
+        getPattern(e.target.feature.properties.Block);
+        $("#summary_pattern").html(e.target.feature.properties.Block);
       }
 
       function getBounds(blastKey) {
@@ -479,54 +419,6 @@
         map.fitBounds(bounds);
         map.panTo(bounds.getCenter());
         //getholedata();
-        //getPattern();
-      }
-
-      function getholedata() {
-        $.getJSON(
-          "https://www.haulsmart.com/apis/holedata.php?id=so_gw_295_08",
-          function (geojson) {
-            holemarkers.clearLayers();
-            for (var j = 0; j < geojson.features.length; j++) {
-              var coords = geojson.features[j].geometry.coordinates;
-              var html =
-                geojson.features[j].properties.Hole +
-                "<br/>" +
-                geojson.features[j].properties.HoleType +
-                "<br/>" +
-                (geojson.features[j].properties.Collar -
-                  geojson.features[j].properties.Toe) +
-                "m";
-              var marker = L.marker([coords[1], coords[0]], {
-                icon: holeIcon,
-                id: geojson.features[j].properties.Hole,
-                type: geojson.features[j].properties.HoleType,
-                collar: geojson.features[j].properties.Collar,
-                toe: geojson.features[j].properties.Toe,
-                dia: geojson.features[j].properties.Dia,
-                tap: false,
-              }).addTo(map);
-              marker.myID = j;
-              marker
-                .on("click", function (event) {
-                  onHoleClick(event.target.myID);
-                })
-                .bindPopup(html);
-              holemarkers.addLayer(marker);
-              addHole(
-                geojson.features[j].properties.Blast,
-                geojson.features[j].properties.Hole,
-                geojson.features[j].properties.HoleType,
-                geojson.features[j].properties.Collar,
-                geojson.features[j].properties.Toe,
-                geojson.features[j].properties.Angle,
-                geojson.features[j].properties.Dipped,
-                coords[1],
-                coords[0]
-              );
-            }
-          }
-        );
       }
 
       function onHoleClick(id) {
@@ -566,12 +458,12 @@
         var req = indexedDB.open(window.DB_NAME, window.DB_VERSION);
         req.onsuccess = function (evt) {
           window.db = this.result;
-
-          //getPolygons();
+          getPolygons();
           if (
-            localStorage.getItem("pattern") !== null ||
-            localStorage.getItem("pattern") !== undefined
+            localStorage.getItem("pattern") === null ||
+            localStorage.getItem("pattern") === undefined
           ) {
+          } else {
             getPattern(localStorage.getItem("pattern"));
           }
         };
@@ -649,123 +541,128 @@
       }
 
       function getPattern(pattern) {
-        holemarkers.clearLayers();
-        var store = window.db
-          .transaction(window.DB_STORE_NAME, "readwrite")
-          .objectStore(window.DB_STORE_NAME);
+        console.log(pattern);
+        if (pattern !== null || pattern !== undefined) {
+          holemarkers.clearLayers();
+          var store = window.db
+            .transaction(window.DB_STORE_NAME, "readwrite")
+            .objectStore(window.DB_STORE_NAME);
 
-        var req;
-        try {
-          req = store.getAll();
-        } catch (e) {
-          if (e.name == "DataCloneError")
-            console.log(
-              "This engine doesn't know how to clone a Blob, use Firefox"
-            );
-          throw e;
-        }
-        req.onsuccess = function (evt) {
-          let holedata = req.result;
-          patterndata = req.result;
-          var bounds = L.latLngBounds();
-          design_holes = 0;
-          design_mtrs = 0;
-          dipped_holes = 0;
-          dipped_mtrs = 0;
-          for (var i = 0; i < holedata.length; i++) {
-            if (holedata[i].blast == pattern) {
-              design_holes += 1;
-              var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
-              design_mtrs += depth * 1;
-              var difference = holedata[i].dipped - depth;
-              if (holedata[i].dipped * 1 === 0) {
-                var icon = L.icon({
-                  iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
-                  iconSize: [10, 10],
-                  iconAnchor: [5, 5],
-                });
-              } else {
-                dipped_holes += 1;
-                dipped_mtrs += holedata[i].dipped * 1;
-                if (difference > -0.3 && difference < 0.3) {
+          var req;
+          try {
+            req = store.getAll();
+          } catch (e) {
+            if (e.name == "DataCloneError")
+              console.log(
+                "This engine doesn't know how to clone a Blob, use Firefox"
+              );
+            throw e;
+          }
+          req.onsuccess = function (evt) {
+            let holedata = req.result;
+            patterndata = req.result;
+            console.log(holedata);
+            var bounds = L.latLngBounds();
+            design_holes = 0;
+            design_mtrs = 0;
+            dipped_holes = 0;
+            dipped_mtrs = 0;
+            for (var i = 0; i < holedata.length; i++) {
+              if (holedata[i].blast == pattern) {
+                bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
+                design_holes += 1;
+                var depth = (holedata[i].collar - holedata[i].toe).toFixed(1);
+                design_mtrs += depth * 1;
+                var difference = holedata[i].dipped - depth;
+                if (holedata[i].dipped * 1 === 0) {
                   var icon = L.icon({
-                    iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
+                    iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
                     iconSize: [10, 10],
                     iconAnchor: [5, 5],
                   });
                 } else {
-                  if (difference > -0.5 && difference < 0.5) {
+                  dipped_holes += 1;
+                  dipped_mtrs += holedata[i].dipped * 1;
+                  if (difference > -0.3 && difference < 0.3) {
                     var icon = L.icon({
-                      iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
+                      iconUrl: "%PUBLIC_URL%/images/bh_green.png?n=1",
                       iconSize: [10, 10],
                       iconAnchor: [5, 5],
                     });
                   } else {
-                    var icon = L.icon({
-                      iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
-                      iconSize: [10, 10],
-                      iconAnchor: [5, 5],
-                    });
+                    if (difference > -0.5 && difference < 0.5) {
+                      var icon = L.icon({
+                        iconUrl: "%PUBLIC_URL%/images/bh_orange.png?n=1",
+                        iconSize: [10, 10],
+                        iconAnchor: [5, 5],
+                      });
+                    } else {
+                      var icon = L.icon({
+                        iconUrl: "%PUBLIC_URL%/images/bh_red.png?n=1",
+                        iconSize: [10, 10],
+                        iconAnchor: [5, 5],
+                      });
+                    }
                   }
                 }
-              }
-              var html =
-                "<div>" +
-                "<label>Pattern: " +
-                holedata[i].blast +
-                "</label><br/>" +
-                "<label>Hole: " +
-                holedata[i].hole +
-                "</label><br/>" +
-                "<label>Type: " +
-                holedata[i].holetype +
-                "</label><br/>" +
-                "<label>Depth: " +
-                depth +
-                "</label><br/>" +
-                "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
-              bounds.extend(L.latLng(holedata[i].lat, holedata[i].lng));
-              var marker = L.marker([holedata[i].lat, holedata[i].lng], {
-                icon: icon,
-                id: holedata[i].id,
-                hole: holedata[i].hole,
-                type: holedata[i].holetype,
-                collar: holedata[i].collar,
-                toe: holedata[i].toe,
-                dipped: holedata[i].dipped,
-                tap: false,
-              }).addTo(map);
+                var html =
+                  "<div>" +
+                  "<label>Pattern: " +
+                  holedata[i].blast +
+                  "</label><br/>" +
+                  "<label>Hole: " +
+                  holedata[i].hole +
+                  "</label><br/>" +
+                  "<label>Type: " +
+                  holedata[i].holetype +
+                  "</label><br/>" +
+                  "<label>Depth: " +
+                  depth +
+                  "</label><br/>" +
+                  "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
 
-              marker.myID = holedata[i].id;
-              marker
-                .on("click", function (event) {
-                  onHoleClick(event.target.myID);
-                })
-                .bindTooltip(holedata[i].hole, {
-                  permanent: true,
-                  direction: "right",
-                  offset: [10, 0],
-                  className: "leaflet-tooltip-own",
-                })
-                .bindPopup(html, window.customOptions);
-              holemarkers.addLayer(marker);
+                var marker = L.marker([holedata[i].lat, holedata[i].lng], {
+                  icon: icon,
+                  id: holedata[i].id,
+                  hole: holedata[i].hole,
+                  type: holedata[i].holetype,
+                  collar: holedata[i].collar,
+                  toe: holedata[i].toe,
+                  dipped: holedata[i].dipped,
+                  tap: false,
+                }).addTo(map);
+
+                marker.myID = holedata[i].id;
+                marker
+                  .on("click", function (event) {
+                    onHoleClick(event.target.myID);
+                  })
+                  .bindTooltip(holedata[i].hole, {
+                    permanent: true,
+                    direction: "right",
+                    offset: [10, 0],
+                    className: "leaflet-tooltip-own",
+                  })
+                  .bindPopup(html, window.customOptions);
+                holemarkers.addLayer(marker);
+              }
             }
-          }
-          $("#design_holes").html("Design Holes: " + design_holes);
-          $("#design_mtrs").html("Design Mtrs: " + design_mtrs.toFixed(1));
-          $("#dipped_holes").html("Dipped Holes: " + dipped_holes);
-          $("#dipped_mtrs").html("Dipped Metres: " + dipped_mtrs.toFixed(1));
-          $("#summary").show();
-          holemarkers.eachLayer(function (layer) {
-            var depth = layer.options.Collar * 1 - layer.options.Toe * 1;
-            var difference = layer.options.dipped * 1 - depth;
-          });
-          map.fitBounds(bounds);
-          map.panTo(bounds.getCenter());
-        };
-        req.onerror = function () {
-          console.error("read db error", this.error);
-        };
+            map.fitBounds(bounds);
+            map.panTo(bounds.getCenter());
+            $("#design_holes").html("Design Holes: " + design_holes);
+            $("#design_mtrs").html("Design Mtrs: " + design_mtrs.toFixed(1));
+            $("#dipped_holes").html("Dipped Holes: " + dipped_holes);
+            $("#dipped_mtrs").html("Dipped Metres: " + dipped_mtrs.toFixed(1));
+            $("#summary").show();
+            holemarkers.eachLayer(function (layer) {
+              var depth = layer.options.Collar * 1 - layer.options.Toe * 1;
+              var difference = layer.options.dipped * 1 - depth;
+            });
+          };
+          req.onerror = function () {
+            console.error("read db error", this.error);
+          };
+        }
       }
 
       window.holeObj;

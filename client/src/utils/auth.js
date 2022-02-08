@@ -45,6 +45,7 @@ class AuthService {
     localStorage.removeItem("email");
     localStorage.removeItem("password");
     localStorage.setItem("bh_database", "false");
+    localStorage.removeItem("pattern");
     window.location.assign("/");
   }
 }

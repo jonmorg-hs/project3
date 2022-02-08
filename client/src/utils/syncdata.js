@@ -19,12 +19,13 @@ const syncData = () => {
       dataType: "json",
       type: "GET",
       async: true,
-      success: function (geojson) {
-        console.log(geojson);
-        let store = window.db
+      success: function (data) {
+        console.log(data);
+        var geojson = data[0];
+        var store = window.db
           .transaction("polygons", "readwrite")
           .objectStore("polygons");
-        let req;
+        var req;
         req = store.clear();
         try {
           req = store.add(geojson);
@@ -45,47 +46,56 @@ const syncData = () => {
             $("#message").html("").hide();
           }, 3000);
         };
+        var store = window.db
+          .transaction("patterns", "readwrite")
+          .objectStore("patterns");
+        var req;
+        req = store.clear();
+        let holedata = data[1];
+        for (let i = 0; i < holedata.length; i++) {
+          var store = window.db
+            .transaction("patterns", "readwrite")
+            .objectStore("patterns");
+          var req;
+          try {
+            req = store.add({
+              blast: holedata[i].blast,
+              hole: holedata[i].hole,
+              holetype: holedata[i].holetype,
+              collar: holedata[i].collar,
+              toe: holedata[i].toe,
+              angle: holedata[i].angle,
+              dipped: holedata[i].dipped,
+              lat: holedata[i].lat,
+              lng: holedata[i].lng,
+            });
+          } catch (e) {
+            throw e;
+          }
+          req.onsuccess = function (evt) {
+            let message = "Syncing with HaulSmart";
+            $("#message").html(message).css({ display: "table-cell" }).show();
+            setTimeout(function () {
+              $("#message").html("").hide();
+            }, 3000);
+            if (i === holedata.length - 1) {
+              let message = "HaulSmart Sync successful";
+              $("#message").html(message).css({ display: "table-cell" }).show();
+              setTimeout(function () {
+                $("#message").html("").hide();
+              }, 3000);
+            }
+          };
+          req.onerror = function () {
+            let message = "Sync Failed " + this.error;
+            $("#message").html(message).css({ display: "table-cell" }).show();
+            setTimeout(function () {
+              $("#message").html("").hide();
+            }, 3000);
+          };
+        }
       },
     });
-    //$.getJSON(
-    //  "https://www.haulsmart.com/apis/holedata.php?id=so_gw_295_08",
-    //  function (geojson) {
-    //    for (var j = 0; j < geojson.features.length; j++) {
-    //      var coords = geojson.features[j].geometry.coordinates;
-    //      var obj = {
-    //        id: j,
-    //        blast: geojson.features[j].properties.Blast,
-    //        hole: geojson.features[j].properties.Hole,
-    //        holetype: geojson.features[j].properties.HoleType,
-    //        collar: geojson.features[j].properties.Collar,
-    //        toe: geojson.features[j].properties.Toe,
-    //        angle: geojson.features[j].properties.Angle,
-    //        dipped: geojson.features[j].properties.Dipped,
-    //        lat: coords[1],
-    //        lng: coords[0],
-    //      };
-    //      var store = window.db
-    //        .transaction(window.DB_STORE_NAME, "readwrite")
-    //        .objectStore(window.DB_STORE_NAME);
-    //      var req;
-    //      try {
-    //        req = store.add(obj);
-    //      } catch (e) {
-    //        if (e.name === "DataCloneError")
-    //          console.log(
-    //            "This engine doesn't know how to clone a Blob, " + "use Firefox"
-    //          );
-    //        throw e;
-    //      }
-    //      req.onsuccess = function (evt) {
-    //        console.log("Insertion in DB successful");
-    //      };
-    //      req.onerror = function () {
-    //        console.error("addHole error", this.error);
-    //      };
-    //    }
-    //  }
-    //);
   } else {
     let message = "Syncing with Cloud";
     $("#message").html(message).css({ display: "table-cell" }).show();

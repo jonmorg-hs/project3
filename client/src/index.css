@@ -181,7 +181,7 @@ body {
   right: 5px;
   top: 5px;
   text-align: left;
-  z-index: 2;
+  z-index: 1;
   display: none;
 }
 
