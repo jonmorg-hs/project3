@@ -20,11 +20,12 @@ The user can Sync the device data with the cloud database when internet network 
 
 # Screenshot
 
-<img src="/public/bh_screenshot.png">
+<img src="public/bh_screenshot.png">
 
 # Installation
 
 npm install jquery --save
+
 npm install react-device-detect --save
 
 # Link
