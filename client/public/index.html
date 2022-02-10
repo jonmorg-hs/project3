@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=5" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <link
@@ -14,6 +14,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Blasthole_Dipping" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <meta name="theme-color" content="#2196F3" />
+    <meta name="description" content="Blast Hole Dipping App" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Drill & Blast QAQC</title>
     <link
@@ -443,7 +445,7 @@
       //indexedDB functions
       window.db;
       window.DB_NAME = "blasts";
-      window.DB_VERSION = 4;
+      window.DB_VERSION = 5;
       window.DB_STORE_NAME = "patterns";
 
       //open indexedDB
@@ -451,6 +453,7 @@
         var req = indexedDB.open(window.DB_NAME, window.DB_VERSION);
         req.onsuccess = function (evt) {
           window.db = this.result;
+          console.log(window.db);
           getPolygons();
           if (
             localStorage.getItem("pattern") === null ||
@@ -465,19 +468,11 @@
         };
 
         req.onupgradeneeded = function (evt) {
-          var req = indexedDB.deleteDatabase("blasts");
-          req.onsuccess = function () {
-            console.log("Deleted database successfully");
-          };
-          req.onerror = function () {
-            console.log("Couldn't delete database");
-          };
-          req.onblocked = function () {
-            console.log(
-              "Couldn't delete database due to the operation being blocked"
-            );
-          };
+          //var req = indexedDB.deleteDatabase("blasts");
 
+          //evt.currentTarget.result.deleteObjectStore("polygons");
+          //evt.currentTarget.result.deleteObjectStore("patterns");
+          //evt.currentTarget.result.deleteObjectStore("offlineholes");
           var polygonstore = evt.currentTarget.result.createObjectStore(
             "polygons",
             {

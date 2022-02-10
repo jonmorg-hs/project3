@@ -1,4 +1,4 @@
-let CACHE_NAME = "dippingmap_cache22";
+let CACHE_NAME = "dippingmap_cache31";
 
 let urlsToCache = [
   "/",
@@ -14,12 +14,11 @@ let urlsToCache = [
   "/images/btn-Locate@2x.png",
   "/images/pos.png",
   "/images/splash.png",
-  "/images/mobile_splash.png",
   "/favicon.png",
   "/logo192.png",
   "/logo512.png",
   "/images/haulsmart_logo.gif",
-  "/menu.png",
+  "/images/menu.png",
 
   "/jquery-csv.js",
 
