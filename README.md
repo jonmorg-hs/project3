@@ -16,7 +16,7 @@ This is a PWA app developed to digitise the collection of drill hole data in the
 
 Becuase internet network coverage cannot be 100% reliable in surface mining operations, storing reference data when internet network is available (blast polygons and pattern design markers) and captured data once in the field is of practical importance. To achieve this, this app uses IndexedDB to reliably store data on the device allowing access when working offline.
 
-When inserting blast hole drill depth data, if internet connection exists, the data will be directly sent to the cloud, whilst storing the data on the device. If offline, the blast hole drill depth data will be stored in a 'pending' indexedDB store waiting for internet connection to upload either automatically or manually.
+When inserting blast hole drill depth data, if internet connection exists, the data will be directly sent to the cloud, whilst storing the data on the device. If offline, the blast hole drill depth data will be stored in a 'pending upload' indexedDB store waiting for internet connection to upload automatically.
 
 Live uploading allows engineers and supervisors to view captured data in real time, monitoring drilling performance and progress.
 

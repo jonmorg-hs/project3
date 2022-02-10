@@ -111,6 +111,7 @@
           onclick="$('#uploadform').hide()"
         />
       </form>
+      <!--<img src='images/downloadcsv.png' style='cursor:pointer;width:20px;height:20px' title='Download CSV template' /><a class="fileDownloadPromise" href="templates/pattern_template.csv?n=1">Download Drill Pattern Template</a>-->
     </div>
     <div id="summary">
       <label id="summary_pattern"></label><br /><br />
@@ -811,7 +812,7 @@
           throw e;
         }
         req.onsuccess = function (evt) {
-          map.closePopup();
+          //map.closePopup();
           uploadHole(window.holeObj);
         };
         req.onerror = function () {
@@ -828,20 +829,58 @@
               type: "POST",
               data: { json: JSON.stringify(window.holeObj) },
               timeout: 10000,
-              error: function () {},
+              error: function () {
+                storeOfflineHole(window.holeObj, "UPLOAD ERROR: ");
+              },
               dataType: "text",
               success: function (text) {
                 showMessage("Hole updated on HaulSmart");
-                map.closePopup();
+                //map.closePopup();
+                storeOfflineHole(window.holeObj, "TEST: ");
               },
             });
           } else {
+            storeOfflineHole(window.holeObj, "NO INTERNET: ");
+          }
+        }
+      }
+
+      setInterval(function () {
+        uploadOfflineHoles();
+      }, 60000);
+
+      function storeOfflineHole(data, error) {
+        var store = window.db
+          .transaction("offlineholes", "readwrite")
+          .objectStore("offlineholes");
+        var req;
+        try {
+          req = store.put(data);
+        } catch (e) {
+          if (e.name == "DataCloneError")
+            console.log(
+              "This engine doesn't know how to clone a Blob, use Firefox"
+            );
+          throw e;
+        }
+        req.onsuccess = function (evt) {
+          showMessage(error + "Hole stored on device");
+          //map.closePopup();
+        };
+        req.onerror = function () {
+          console.error("read db error", this.error);
+        };
+      }
+
+      function uploadOfflineHoles() {
+        if (localStorage.getItem("bh_database") == "true") {
+          if (navigator.onLine === true) {
             var store = window.db
               .transaction("offlineholes", "readwrite")
               .objectStore("offlineholes");
             var req;
             try {
-              req = store.put(window.holeObj);
+              req = store.getAll();
             } catch (e) {
               if (e.name == "DataCloneError")
                 console.log(
@@ -850,9 +889,25 @@
               throw e;
             }
             req.onsuccess = function (evt) {
-              showMessage(
-                "OFFLINE: Hole stored for uploading when internet connected"
-              );
+              if (req.result.length > 0) {
+                $.ajax({
+                  url: "https://www.haulsmart.com/apis/setHoles.php",
+                  type: "POST",
+                  data: { json: JSON.stringify(req.result) },
+                  timeout: 10000,
+                  error: function () {
+                    storeOfflineHole(window.holeObj, "UPLOAD ERROR: ");
+                  },
+                  dataType: "text",
+                  success: function (text) {
+                    showMessage("Cloud Data insync");
+                    let clearstore = window.db
+                      .transaction("offlineholes", "readwrite")
+                      .objectStore("offlineholes")
+                      .clear();
+                  },
+                });
+              }
             };
             req.onerror = function () {
               console.error("read db error", this.error);
