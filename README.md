@@ -68,6 +68,8 @@ All the data captured using this app will assist drill and blast engineers with 
 
 <img src="../../blob/main/client/public/images/db_screenshot.png">
 
+<img src="../../blob/main/client/public/images/db_worksheet.png">
+
 # Installation
 
 Additional resources requiring installation:

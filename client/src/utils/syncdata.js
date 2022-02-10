@@ -13,52 +13,48 @@ const syncData = () => {
       localStorage.getItem("email") +
       "&password=" +
       localStorage.getItem("password");
-    console.log(url);
+    var storeddata = [];
     $.ajax({
       url: url,
       dataType: "json",
-      type: "GET",
+      type: "POST",
+      data: { json: JSON.stringify(storeddata) },
       async: true,
       success: function (data) {
-        console.log(data);
         var geojson = data[0];
-        var store = window.db
+        var polygon_store = window.db
           .transaction("polygons", "readwrite")
           .objectStore("polygons");
-        var req;
-        req = store.clear();
+        var polygon_req;
+        polygon_req = polygon_store.clear();
         try {
-          req = store.add(geojson);
+          polygon_req = polygon_store.add(geojson);
         } catch (e) {
           throw e;
         }
-        req.onsuccess = function (evt) {
+        polygon_req.onsuccess = function (evt) {
           let message = "Sync successful";
           $("#message").html(message).css({ display: "table-cell" }).show();
           setTimeout(function () {
             $("#message").html("").hide();
           }, 3000);
         };
-        req.onerror = function () {
+        polygon_req.onerror = function () {
           let message = "Sync Failed " + this.error;
           $("#message").html(message).css({ display: "table-cell" }).show();
           setTimeout(function () {
             $("#message").html("").hide();
           }, 3000);
         };
-        var store = window.db
+        var pattern_store = window.db
           .transaction("patterns", "readwrite")
           .objectStore("patterns");
-        var req;
-        req = store.clear();
+        var pattern_req;
+        pattern_req = pattern_store.clear();
         let holedata = data[1];
         for (let i = 0; i < holedata.length; i++) {
-          var store = window.db
-            .transaction("patterns", "readwrite")
-            .objectStore("patterns");
-          var req;
           try {
-            req = store.add({
+            pattern_req = pattern_store.add({
               blast: holedata[i].blast,
               hole: holedata[i].hole,
               holetype: holedata[i].holetype,
@@ -72,7 +68,7 @@ const syncData = () => {
           } catch (e) {
             throw e;
           }
-          req.onsuccess = function (evt) {
+          pattern_req.onsuccess = function (evt) {
             let message = "Syncing with HaulSmart";
             $("#message").html(message).css({ display: "table-cell" }).show();
             setTimeout(function () {
@@ -86,7 +82,7 @@ const syncData = () => {
               }, 3000);
             }
           };
-          req.onerror = function () {
+          pattern_req.onerror = function () {
             let message = "Sync Failed " + this.error;
             $("#message").html(message).css({ display: "table-cell" }).show();
             setTimeout(function () {
