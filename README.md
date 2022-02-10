@@ -20,6 +20,37 @@ When inserting blast hole drill depth data, if internet connection exists, the d
 
 Live uploading allows engineers and supervisors to view captured data in real time, monitoring drilling performance and progress.
 
+This App fetches data from a platform called HaulSmart, where the login credentials below allows access to demo data.
+
+Username: Test
+Password: Test
+Email: test@test.com
+
+When manually syncing data, the fetch API will download a demonstration blast polygon and design hole pattern.
+
+The User can then interact with the blast holes, clicking the hole to insert the actual drilling depth. This is usually undertaken by 'dipping' the hole with a tape measure to read the metres from the top to bottom of the blast hole.
+
+The App is designed to be mobile friendly with a dark background to assist viewing in outdoor environments and attempting to overcome glare off protective covers on tablets.
+
+An optional extra is to view the pattern on a worksheet instead of a map. The user can sort the holes either alphabetically or by GPS position.
+
+The App is installable on the device allowing offline login and functionality, placing an icon on the mobile home screen for easy access.
+
+When clicking a hole the User will be presented with a popup to insert the measured hole depth. On input, the hole will be colored according to the drill tolerances:
+
+Green - within +/- 200mm
+Orange - withing +/- 500mm
+Red - outside +/- 500m
+
+Measured holes that are less than the design are usually redrilled.
+Measured holes that are greater than the design are usually backfilled with drilling cuttings.
+
+The purpose of measuring the hole is to ensure that the explosive loaded into the hole is positioned correctly. Underchanging explosives into holes does not achieve the fragmentation required at depth, whilst overcharging a hole can be inefficient in terms of cost.
+
+<img src="../../blob/main/client/public/images/drillhole_explanation.png">
+
+As per the above illustration:
+
 # Screenshots
 
 <img src="../../blob/main/client/public/images/db_splash.png">
