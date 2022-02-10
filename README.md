@@ -51,6 +51,17 @@ The purpose of measuring the hole is to ensure that the explosive loaded into th
 
 As per the above illustration:
 
+- overdrilled but charged to design explosive quantity - overstemmed resulting in poor fragmentation in the stemming colum
+- overdrilled and overcharged explosive to design stemming depth - possible explosive energy loss due to hole expulsion and subsequent poor fragmentation
+- underdrillied but charged to design stemming depth - not sufficient explosive energy casuing poor fragementation and possible toe in the floor
+- underdrilled and explosive charged to design quantity - not sufficent stemming column to contain the charge and possible explosive energy loss due to hole expulsion and subsequent poor fragmentation
+
+Redrilling holes underdrilled to ensure correct hole charging is additional cost due to machine hours and resources required (extra wear on drill bits and rods).
+
+Backfilling holes overdrilled to ensure correct hole charging is additional cost due to resources required (personnel backfilling holes with drill cuttings).
+
+All the data captured using this app will assist drill and blast engineers with monitoring performance and analysis of their drill and blast operations.
+
 # Screenshots
 
 <img src="../../blob/main/client/public/images/db_splash.png">
