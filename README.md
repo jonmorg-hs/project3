@@ -23,7 +23,7 @@ Live uploading allows engineers and supervisors to view captured data in real ti
 This App fetches data from a platform called HaulSmart, where the login credentials below allows access to demo data.
 
 Username: Test
-Password: Test
+Password: Test1234
 Email: test@test.com
 
 When manually syncing data, the fetch API will download a demonstration blast polygon and design hole pattern.
