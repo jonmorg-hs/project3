@@ -165,7 +165,7 @@ body {
   left: calc(50% - 100px);
   top: calc(50% - 30px);
   text-align: center;
-  z-index: 2;
+  z-index: 99;
 }
 
 #summary {
@@ -192,7 +192,7 @@ body {
   height: 100%;
   top: 0px;
   left: 0px;
-  z-index: 99;
+  z-index: 98;
   display: none;
 }
 

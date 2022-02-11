@@ -1,4 +1,5 @@
 import $ from "jquery";
+import { uploadHole } from "../index.js";
 
 const workSheet = () => {
   var store = window.db
@@ -80,6 +81,7 @@ const workSheet = () => {
       var str = $(this).attr("id");
       var hid = str.substr(3);
       hid = hid * 1;
+
       var store = window.db
         .transaction(window.DB_STORE_NAME, "readwrite")
         .objectStore(window.DB_STORE_NAME);
@@ -102,6 +104,21 @@ const workSheet = () => {
         $("#dippedval").val(window.holeObj.dipped);
 
         var dipped = $("#did" + hid).val() * 1;
+        var designdepth = $("#ded" + hid).val() * 1;
+        var difference = dipped - designdepth;
+        if (dipped !== 0) {
+          if (difference > -0.3 && difference < 0.3) {
+            $("#did" + hid).css({ "background-color": "green" });
+          } else {
+            if (difference > -0.5 && difference < 0.5) {
+              $("#did" + hid).css({
+                "background-color": "orange",
+              });
+            } else {
+              $("#did" + hid).css({ "background-color": "red" });
+            }
+          }
+        }
         console.log(dipped);
         window.holeObj.dipped = dipped;
         console.log(window.holeObj);
@@ -116,7 +133,7 @@ const workSheet = () => {
         }
         req.onsuccess = function (evt) {
           console.log("Writing to DB successful");
-          //uploadHole(window.holeObj);
+          uploadHole(window.holeObj);
         };
         req.onerror = function () {
           console.error("read db error", this.error);

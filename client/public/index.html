@@ -53,73 +53,9 @@
     <div class="custom-popup" id="popup"></div>
     <div id="message"></div>
     <div id="worksheet"></div>
-    <div id="locationbuttons">
-      <img
-        src="/images/btn-Locate@2x.png"
-        width="50"
-        height="50"
-        class="mapbutton"
-        title="Centre User Position"
-        onclick="centerUser()"
-        style="cursor: pointer"
-      />
-      <img
-        src="/images/btn-Centre-Map@2x.png"
-        width="50"
-        height="50"
-        class="mapbutton"
-        title="Centre Site Position"
-        onclick="centerSite()"
-        style="cursor: pointer"
-      />
-    </div>
-    <div id="uploadform" class="uploads">
-      <label>UPLOAD DRILL PATTERN :</label><br /><br />
-      <label>Ensure CSV columns:</label><br />
-      <label>Hole_No,Lng,Lat,Collar,Toe,Dia,Brg,Angle</label><br /><br />
-      <input
-        id="pattern"
-        placeholder="Input Pattern Name"
-        style="width: 200px; font: normal 18px Arial"
-        value=""
-      /><br /><br />
-      <form
-        id="uploadForm"
-        name="uploadForm"
-        action="#"
-        enctype="multipart/form-data"
-      >
-        <input
-          id="csv"
-          name="csv"
-          type="file"
-          style="margin-left: 0px; font: normal 16px arial"
-        />
-        <br />
-        <br />
-        <input
-          id="CSVUpload"
-          type="submit"
-          class="btn btn-default"
-          name="Submit"
-          value="Upload"
-        />
-        <input
-          type="button"
-          value="Cancel"
-          class="btn"
-          onclick="$('#uploadform').hide()"
-        />
-      </form>
-      <!--<img src='images/downloadcsv.png' style='cursor:pointer;width:20px;height:20px' title='Download CSV template' /><a class="fileDownloadPromise" href="templates/pattern_template.csv?n=1">Download Drill Pattern Template</a>-->
-    </div>
-    <div id="summary">
-      <label id="summary_pattern"></label><br /><br />
-      <label id="design_holes">Design Holes:</label><br />
-      <label id="design_mtrs">Design Mtrs:</label><br />
-      <label id="dipped_holes">Dipped Holes:</label><br />
-      <label id="dipped_mtrs">Dipped Metres:</label><br />
-    </div>
+    <div id="locationbuttons"></div>
+    <div id="uploadform" class="uploads"></div>
+    <div id="summary"></div>
     <script>
       window.login = false;
       window.email;
@@ -225,10 +161,10 @@
       function locError(error) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            //showMessage("location services permission denied");
+            alertMessage("location services permission denied");
             break;
           case error.POSITION_UNAVAILABLE:
-            //showMessage("gps position unavailable");
+            alertMessage("gps position unavailable");
             wpid = navigator.geolocation.getCurrentPosition(
               displayAndWatch,
               locError,
@@ -236,7 +172,7 @@
             );
             break;
           case error.TIMEOUT:
-            //showMessage("gps timeout");
+            alertMessage("gps timeout");
             wpid = navigator.geolocation.getCurrentPosition(
               displayAndWatch,
               locError,
@@ -244,7 +180,7 @@
             );
             break;
           case error.UNKNOWN_ERROR:
-            //showMessage("unknown gps error");
+            alertMessage("unknown gps error");
             wpid = navigator.geolocation.getCurrentPosition(
               displayAndWatch,
               locError,
@@ -297,6 +233,122 @@
 
       //when dom body ready, initiate the map and geolocation
       $(document).ready(function () {
+        $("#locationbuttons").append(
+          "<img src='/images/btn-Locate@2x.png' width='50' height='50' class='mapbutton' title='Centre User Position' onclick=\"centerUser()\" style='cursor: pointer' /><img  src='/images/btn-Centre-Map@2x.png' width='50' height='50' class='mapbutton' title='Centre Site Position' onclick=\"centerSite()\" style='cursor: pointer' />"
+        );
+        $("#summary").append(
+          "<label id='summary_pattern'></label><br /><br /><label id='design_holes'>Design Holes:</label><br /><label id='design_mtrs'>Design Mtrs:</label><br /><label id='dipped_holes'>Dipped Holes:</label><br /><label id='dipped_mtrs'>Dipped Metres:</label><br />"
+        );
+        $("uploadform").append(
+          "<label>UPLOAD DRILL PATTERN :</label><br /><br /> <label>Ensure CSV columns:</label><br /> <label>Hole_No,Lng,Lat,Collar,Toe,Dia,Brg,Angle</label><br /><br /> <input id='pattern' placeholder='Input Pattern Name' style='width: 200px; font: normal 18px Arial' value='' /><br /><br /> <form id='uploadForm' name='uploadForm' action='#' enctype='multipart/form-data' > <input id='csv'  name='csv' type='file' style='margin-left: 0px; font: normal 16px arial' /> <br />  <br /><input  id='CSVUpload' type='submit' class='btn' name='Submit' value='Upload' /> <input type='button' value='Cancel' class='btn' onclick=\"$('#uploadform').hide()\"/></form>"
+        );
+        $("#uploadForm").submit(function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          var file = document.getElementById("csv").files[0];
+          var filename = document.getElementById("csv").value;
+          var path = filename.slice(0, 12);
+          var ext = filename.substr(filename.lastIndexOf(".") + 1);
+          if (ext === "csv") {
+            var reader = new FileReader();
+            reader.readAsText(file);
+            reader.onload = function (e) {
+              var header = "Hole,Lng,Lat,Collar,Toe,Dia,Brg,Angle";
+              var csvString = header + "\n" + e.target.result;
+              var data = JSON.stringify($.csv.toObjects(csvString));
+
+              let pattern = $("#pattern").val();
+              var url =
+                "https://www.haulsmart.com/apis/drillcsvjson.php?id=" +
+                pattern +
+                "&username=" +
+                localStorage.getItem("email") +
+                "&password=" +
+                localStorage.getItem("password") +
+                "&lat=" +
+                currentlat +
+                "&lng=" +
+                currentlng;
+              $.ajax({
+                url: url,
+                type: "POST",
+                dataType: "json",
+                crossDomain: true,
+                data: { json: data },
+                success: function (data) {
+                  localStorage.setItem("pattern", pattern);
+
+                  holemarkers.clearLayers();
+                  var bounds = L.latLngBounds();
+                  let geojson = data[0];
+                  L.geoJson(data[1], {
+                    style: areaStyle,
+                    onEachFeature: onEachFeature,
+                  }).addTo(map);
+                  for (var j = 0; j < geojson.features.length; j++) {
+                    var coords = geojson.features[j].geometry.coordinates;
+                    bounds.extend([coords[1], coords[0]]);
+                    var depth = (
+                      geojson.features[j].properties.Collar -
+                      geojson.features[j].properties.Toe
+                    ).toFixed(1);
+                    var html =
+                      "<div>" +
+                      "<label>Pattern: " +
+                      geojson.features[j].properties.Blast +
+                      "</label><br/>" +
+                      "<label>Hole: " +
+                      geojson.features[j].properties.Hole +
+                      "</label><br/>" +
+                      "<label>Type: " +
+                      geojson.features[j].properties.HoleType +
+                      "</label><br/>" +
+                      "<label>Depth: " +
+                      depth +
+                      "</label><br/>" +
+                      "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
+                    var marker = L.marker([coords[1], coords[0]], {
+                      icon: L.icon({
+                        iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
+                        iconSize: [10, 10],
+                        iconAnchor: [5, 5],
+                      }),
+                      id: geojson.features[j].properties.Hole,
+                      type: geojson.features[j].properties.HoleType,
+                      collar: geojson.features[j].properties.Collar,
+                      toe: geojson.features[j].properties.Toe,
+                      dia: geojson.features[j].properties.Dia,
+                      tap: false,
+                    }).addTo(map);
+                    marker.myID = j;
+                    marker
+                      .on("click", function (event) {
+                        onHoleClick(event.target.myID);
+                      })
+                      .bindPopup(html);
+                    holemarkers.addLayer(marker);
+                    addHole(
+                      geojson.features[j].properties.Blast,
+                      geojson.features[j].properties.Hole,
+                      geojson.features[j].properties.HoleType,
+                      geojson.features[j].properties.Collar,
+                      geojson.features[j].properties.Toe,
+                      geojson.features[j].properties.Angle,
+                      geojson.features[j].properties.Dipped,
+                      coords[1],
+                      coords[0]
+                    );
+                  }
+                  map.fitBounds(bounds);
+                  map.panTo(bounds.getCenter());
+                  $("#uploadform").hide();
+                },
+              });
+            };
+          } else {
+            alertMessage("Please ensure you upload a csv file");
+          }
+        });
         initMap();
         if (!!navigator.geolocation) {
           wpid = navigator.geolocation.getCurrentPosition(
@@ -309,16 +361,17 @@
             }
           );
         } else {
-          showMessage("Your browser does not support the Geolocation API");
+          alertMessage("Your browser does not support the Geolocation API");
         }
         $("#summary_pattern").html(localStorage.getItem("pattern"));
-        if (localStorage.getItem("bh_database") === "false") {
+        if (localStorage.getItem("bh_database") === "true") {
           $("#uploadcsv").hide();
         }
       });
 
       //alert message function
-      function showMessage(message) {
+
+      function alertMessage(message) {
         $("#message").html(message).css({ display: "table-cell" }).show();
         setTimeout(function () {
           $("#message").html("").hide();
@@ -661,7 +714,7 @@
 
               cursor.continue();
             } else {
-              showMessage(pattern + " Loaded");
+              alertMessage(pattern + " Loaded");
             }
             map.fitBounds(pbounds);
             map.panTo(pbounds.getCenter());
@@ -834,9 +887,8 @@
               },
               dataType: "text",
               success: function (text) {
-                showMessage("Hole updated on HaulSmart");
-                //map.closePopup();
-                storeOfflineHole(window.holeObj, "TEST: ");
+                alertMessage("Hole updated on HaulSmart");
+                map.closePopup();
               },
             });
           } else {
@@ -844,10 +896,6 @@
           }
         }
       }
-
-      setInterval(function () {
-        uploadOfflineHoles();
-      }, 60000);
 
       function storeOfflineHole(data, error) {
         var store = window.db
@@ -871,6 +919,17 @@
           console.error("read db error", this.error);
         };
       }
+
+      function showMessage(message) {
+        $("#message").html(message).css({ display: "table-cell" }).show();
+        setTimeout(function () {
+          $("#message").html("").hide();
+        }, 3000);
+      }
+
+      setInterval(function () {
+        uploadOfflineHoles();
+      }, 60000);
 
       function uploadOfflineHoles() {
         if (localStorage.getItem("bh_database") == "true") {
@@ -1097,113 +1156,6 @@
       }
 
       //upload csv pattern file for storing in indexedDB
-      $("#uploadForm").submit(function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        var file = document.getElementById("csv").files[0];
-        var filename = document.getElementById("csv").value;
-        var path = filename.slice(0, 12);
-        var ext = filename.substr(filename.lastIndexOf(".") + 1);
-        if (ext === "csv") {
-          var reader = new FileReader();
-          reader.readAsText(file);
-          reader.onload = function (e) {
-            var header = "Hole,Lng,Lat,Collar,Toe,Dia,Brg,Angle";
-            var csvString = header + "\n" + e.target.result;
-            var data = JSON.stringify($.csv.toObjects(csvString));
-
-            let pattern = $("#pattern").val();
-            var url =
-              "https://www.haulsmart.com/apis/drillcsvjson.php?id=" +
-              pattern +
-              "&username=" +
-              localStorage.getItem("email") +
-              "&password=" +
-              localStorage.getItem("password") +
-              "&lat=" +
-              currentlat +
-              "&lng=" +
-              currentlng;
-            $.ajax({
-              url: url,
-              type: "POST",
-              dataType: "json",
-              crossDomain: true,
-              data: { json: data },
-              success: function (data) {
-                localStorage.setItem("pattern", pattern);
-
-                holemarkers.clearLayers();
-                var bounds = L.latLngBounds();
-                let geojson = data[0];
-                L.geoJson(data[1], {
-                  style: areaStyle,
-                  onEachFeature: onEachFeature,
-                }).addTo(map);
-                for (var j = 0; j < geojson.features.length; j++) {
-                  var coords = geojson.features[j].geometry.coordinates;
-                  bounds.extend([coords[1], coords[0]]);
-                  var depth = (
-                    geojson.features[j].properties.Collar -
-                    geojson.features[j].properties.Toe
-                  ).toFixed(1);
-                  var html =
-                    "<div>" +
-                    "<label>Pattern: " +
-                    geojson.features[j].properties.Blast +
-                    "</label><br/>" +
-                    "<label>Hole: " +
-                    geojson.features[j].properties.Hole +
-                    "</label><br/>" +
-                    "<label>Type: " +
-                    geojson.features[j].properties.HoleType +
-                    "</label><br/>" +
-                    "<label>Depth: " +
-                    depth +
-                    "</label><br/>" +
-                    "<label>Dipped:</label><input id='dippedval' autocomplete='off' style='margin-left:10px;width:100px' value=''><br/><br/><input type='button' value='OK' style='width:200px' onclick=\"setHole()\"/><br/><br/><input type='button' value='Cancel' style='width:200px' onclick=\"map.closePopup()\"/>";
-                  var marker = L.marker([coords[1], coords[0]], {
-                    icon: L.icon({
-                      iconUrl: "%PUBLIC_URL%/images/bh_white.png?n=1",
-                      iconSize: [10, 10],
-                      iconAnchor: [5, 5],
-                    }),
-                    id: geojson.features[j].properties.Hole,
-                    type: geojson.features[j].properties.HoleType,
-                    collar: geojson.features[j].properties.Collar,
-                    toe: geojson.features[j].properties.Toe,
-                    dia: geojson.features[j].properties.Dia,
-                    tap: false,
-                  }).addTo(map);
-                  marker.myID = j;
-                  marker
-                    .on("click", function (event) {
-                      onHoleClick(event.target.myID);
-                    })
-                    .bindPopup(html);
-                  holemarkers.addLayer(marker);
-                  addHole(
-                    geojson.features[j].properties.Blast,
-                    geojson.features[j].properties.Hole,
-                    geojson.features[j].properties.HoleType,
-                    geojson.features[j].properties.Collar,
-                    geojson.features[j].properties.Toe,
-                    geojson.features[j].properties.Angle,
-                    geojson.features[j].properties.Dipped,
-                    coords[1],
-                    coords[0]
-                  );
-                }
-                map.fitBounds(bounds);
-                map.panTo(bounds.getCenter());
-                $("#uploadform").hide();
-              },
-            });
-          };
-        } else {
-          showMessage("Please ensure you upload a csv file");
-        }
-      });
     </script>
   </body>
 </html>
